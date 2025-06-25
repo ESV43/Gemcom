@@ -5,11 +5,8 @@ import {
   IMAGE_STYLES, COMIC_ERAS, ASPECT_RATIOS, MAX_PAGES,
   MIN_STORY_LENGTH, MAX_STORY_LENGTH, DEFAULT_TEXT_MODELS,
   DEFAULT_IMAGE_MODELS, DEFAULT_CONFIG_VALUES,
-  GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID,
-  CHARACTER_ANALYSIS_MODELS,
-  GEMINI_IMAGEN_MODEL_ID
+  GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID
 } from '../constants';
-import { getPollinationsTextModels, getPollinationsImageModels } from '../services/pollinationsService';
 import LoadingSpinner from './LoadingSpinner';
 
 interface ConfigFormProps {
@@ -40,54 +37,8 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
   const [characters, setCharacters] = useState<CharacterReference[]>(initialCharacters || []);
   const [textModels, setTextModels] = useState<ModelOption[]>(DEFAULT_TEXT_MODELS);
   const [imageModels, setImageModels] = useState<ModelOption[]>(DEFAULT_IMAGE_MODELS);
-  const [analysisModels, setAnalysisModels] = useState<ModelOption[]>(CHARACTER_ANALYSIS_MODELS);
-  const [loadingModels, setLoadingModels] = useState<boolean>(false);
+  const [analysisModels, setAnalysisModels] = useState<ModelOption[]>([]); // populated in App.tsx now
   const [storyWordCount, setStoryWordCount] = useState(0);
-
-  const fetchDynamicModels = useCallback(async () => {
-    setLoadingModels(true);
-    try {
-      const [pollinationsText, pollinationsImage] = await Promise.all([
-        getPollinationsTextModels(),
-        getPollinationsImageModels()
-      ]);
-
-      const uniqueTextModels = new Map<string, ModelOption>();
-      DEFAULT_TEXT_MODELS.forEach(model => uniqueTextModels.set(`${model.provider}-${model.id}`, model));
-      pollinationsText.forEach(model => uniqueTextModels.set(`${model.provider}-${model.id}`, model));
-      setTextModels(Array.from(uniqueTextModels.values()));
-
-      const uniqueImageModels = new Map<string, ModelOption>();
-      DEFAULT_IMAGE_MODELS.forEach(model => uniqueImageModels.set(`${model.provider}-${model.id}`, model));
-      pollinationsImage.forEach(model => uniqueImageModels.set(`${model.provider}-${model.id}`, model));
-      
-      const newImageModelList = Array.from(uniqueImageModels.values());
-      setImageModels(newImageModelList);
-      
-      setAnalysisModels(CHARACTER_ANALYSIS_MODELS); 
-
-      setConfig(prevConfig => {
-        if (newImageModelList.length > 0 && !newImageModelList.some(m => m.id === prevConfig.imageModel)) {
-            console.warn(`Previously selected image model '${prevConfig.imageModel}' is no longer valid. Resetting.`);
-            const firstValidPollinationsModel = newImageModelList.find(m => m.provider === ApiProvider.POLLINATIONS);
-            if (firstValidPollinationsModel) {
-                return { ...prevConfig, imageModel: firstValidPollinationsModel.id };
-            } else {
-                 return { ...prevConfig, imageModel: GEMINI_IMAGEN_MODEL_ID };
-            }
-        }
-        return prevConfig;
-      });
-
-    } catch (error) {
-      console.error("Failed to load Pollinations models", error);
-    }
-    setLoadingModels(false);
-  }, []);
-
-  useEffect(() => {
-    fetchDynamicModels();
-  }, [fetchDynamicModels]);
 
   useEffect(() => {
     setStoryWordCount(config.storyScript.trim() ? config.storyScript.trim().split(/\s+/).length : 0);
@@ -135,163 +86,134 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
   const selectedImageModelDetails = imageModels.find(m => m.id === config.imageModel);
   const showCharAnalysisModelDropdown = characters.length > 0 && selectedImageModelDetails?.id !== GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID;
 
-
-  const renderSelect = (name: string, label: string, value: string | number | undefined, options: {value: string, label: string}[], isLoading?: boolean, customOnChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void) => (
-    <div className="mb-4">
-      <label htmlFor={name} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
-      {isLoading ? <div className="h-10 flex items-center"><LoadingSpinner size="sm" /></div> : (
-        <select
-          id={name}
-          name={name}
-          value={value}
-          onChange={customOnChange || handleChange}
-          disabled={isGenerating}
-          className="w-full p-2.5 dark-input"
-        >
-          {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-        </select>
-      )}
-    </div>
-  );
-
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6 bg-slate-900/80 backdrop-blur-md rounded-xl shadow-2xl purple-glow-container">
-      <h2 className="text-2xl font-bold text-center mb-4 neon-text-header">Configure Your Comic</h2>
+    <form onSubmit={handleSubmit} className="pro-container space-y-8">
+      <div>
+        <h2 className="section-header">Configuration</h2>
+        <div className="space-y-6">
+            <div>
+                <label htmlFor="apiKey" className="form-label">Gemini API Key</label>
+                <input
+                    id="apiKey"
+                    name="apiKey"
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => onApiKeyChange(e.target.value)}
+                    placeholder="Enter your Gemini API key"
+                    className="pro-input"
+                    disabled={isGenerating}
+                />
+                {apiKeyError && <p className="text-xs mt-2 text-red-400">{apiKeyError}</p>}
+            </div>
+            <div>
+                <label htmlFor="storyScript" className="form-label">Story Script ({storyWordCount} words)</label>
+                <textarea
+                id="storyScript"
+                name="storyScript"
+                value={config.storyScript}
+                onChange={handleChange}
+                rows={8}
+                placeholder={`Enter your comic story here (${MIN_STORY_LENGTH}-${MAX_STORY_LENGTH} words)...`}
+                className="pro-input resize-y"
+                disabled={isGenerating}
+                />
+                 <p className={`text-xs mt-2 ${storyWordCount > 0 && (storyWordCount < MIN_STORY_LENGTH || storyWordCount > MAX_STORY_LENGTH) ? 'text-red-400' : 'text-slate-400'}`}>
+                    Min: {MIN_STORY_LENGTH}, Max: {MAX_STORY_LENGTH}
+                </p>
+            </div>
+        </div>
+      </div>
 
       <div>
-        <label htmlFor="apiKey" className="block text-sm font-medium text-slate-300 mb-1">Gemini API Key</label>
-        <input
-            id="apiKey"
-            name="apiKey"
-            type="password"
-            value={apiKey}
-            onChange={(e) => onApiKeyChange(e.target.value)}
-            placeholder="Enter your Gemini API key here"
-            className="w-full p-2.5 dark-input"
-            disabled={isGenerating}
-        />
-        {apiKeyError && <p className="text-xs mt-1 text-red-400">{apiKeyError}</p>}
-        {!apiKeyError && <p className="text-xs mt-1 text-slate-500">Your key is used directly for API calls and is not stored.</p>}
+        <h3 className="section-header">AI Models & Style</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label htmlFor="textModel" className="form-label">Text Model</label>
+                <select id="textModel" name="textModel" value={config.textModel} onChange={handleChange} disabled={isGenerating} className="pro-input">
+                    {textModels.map(m => ({value: m.id, label: `${m.provider} - ${m.name}`})).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="imageModel" className="form-label">Image Model</label>
+                <select id="imageModel" name="imageModel" value={config.imageModel} onChange={handleChange} disabled={isGenerating} className="pro-input">
+                    {imageModels.map(m => ({value: m.id, label: `${m.provider} - ${m.name}`})).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="imageStyle" className="form-label">Image Style</label>
+                <select id="imageStyle" name="imageStyle" value={config.imageStyle} onChange={handleChange} disabled={isGenerating} className="pro-input">
+                    {IMAGE_STYLES.map(s => ({value: s, label: s})).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="comicEra" className="form-label">Comic Era</label>
+                <select id="comicEra" name="comicEra" value={config.comicEra} onChange={handleChange} disabled={isGenerating} className="pro-input">
+                    {COMIC_ERAS.map(e => ({value: e, label: e})).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+        </div>
       </div>
 
       <div>
-        <label htmlFor="storyScript" className="block text-sm font-medium text-slate-300 mb-1">Story Script ({storyWordCount} words)</label>
-        <textarea
-          id="storyScript"
-          name="storyScript"
-          value={config.storyScript}
-          onChange={handleChange}
-          rows={8}
-          placeholder={`Enter your comic story here (${MIN_STORY_LENGTH}-${MAX_STORY_LENGTH} words)...`}
-          className="w-full p-2.5 dark-input resize-y"
-          disabled={isGenerating}
-          minLength={MIN_STORY_LENGTH * 4} 
-          maxLength={MAX_STORY_LENGTH * 10} 
-        />
-        <p className={`text-xs mt-1 ${storyWordCount > 0 && (storyWordCount < MIN_STORY_LENGTH || storyWordCount > MAX_STORY_LENGTH) ? 'text-red-400' : 'text-slate-400'}`}>
-          Word count: {storyWordCount} (min: {MIN_STORY_LENGTH}, max: {MAX_STORY_LENGTH})
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {renderSelect("textModel", "Text Generation Model", config.textModel, textModels.map(m => ({value: m.id, label: `${m.provider} - ${m.name}`})), loadingModels)}
-        {renderSelect("imageModel", "Image Generation Model", config.imageModel, imageModels.map(m => ({value: m.id, label: `${m.provider} - ${m.name}`})), loadingModels)}
-      </div>
-      
-      {showCharAnalysisModelDropdown && (
-        <div className="grid md:grid-cols-1 gap-6">
-          {renderSelect("characterAnalysisModel", "Character Analysis AI Model (for Textual Description)", config.characterAnalysisModel, analysisModels.filter(m => m.isCharacterAnalyzer).map(m => ({ value: m.id, label: `${m.provider} - ${m.name}` })), loadingModels || analysisModels.length === 0)}
-        </div>
-      )}
-
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {renderSelect("imageStyle", "Image Style", config.imageStyle, IMAGE_STYLES.map(s => ({value: s, label: s})))}
-        {renderSelect("comicEra", "Comic Era", config.comicEra, COMIC_ERAS.map(e => ({value: e, label: e})))}
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-         {renderSelect("aspectRatio", "Aspect Ratio", config.aspectRatio, Object.entries(ASPECT_RATIOS).map(([key, val])=> ({value: key, label: val.label})))}
-        <div>
-          <label htmlFor="numPages" className="block text-sm font-medium text-slate-300 mb-1">Number of Pages (1-{MAX_PAGES})</label>
-          <input
-            type="number"
-            id="numPages"
-            name="numPages"
-            value={config.numPages}
-            onChange={handleChange}
-            min="1"
-            max={MAX_PAGES}
-            className="w-full p-2.5 dark-input"
-            disabled={isGenerating}
-          />
-        </div>
-      </div>
-
-        <div>
-          <label htmlFor="seed" className="block text-sm font-medium text-slate-300 mb-1">Image Generation Seed (0 for random)</label>
-          <input
-            type="number"
-            id="seed"
-            name="seed"
-            value={config.seed}
-            onChange={handleChange}
-            min="0"
-            className="w-full p-2.5 dark-input"
-            disabled={isGenerating}
-          />
-        </div>
-
-      <div className="mt-6 p-4 border border-purple-800/50 rounded-lg bg-slate-800/30">
-        <h3 className="text-lg font-semibold text-purple-300 mb-3">Character References</h3>
-        <p className="text-sm text-slate-400 mb-3">
-          Add characters and reference images.
-          {selectedImageModelDetails?.id === GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID ?
-            ` The selected image model (${selectedImageModelDetails?.name}) supports direct image inputs for character consistency.` :
-            ` For other image models, if you provide reference images, their visual descriptions will be added to image prompts.`
-          }
-        </p>
-        
-        {showCharAnalysisModelDropdown && (
-          <div className="mb-4">
-            {renderSelect( "characterAnalysisModel", "Character Analysis AI Model", config.characterAnalysisModel, analysisModels.filter(m => m.isCharacterAnalyzer).map(m => ({ value: m.id, label: `${m.provider} - ${m.name}` })), loadingModels || analysisModels.length === 0 )}
+          <h3 className="section-header">Output Settings</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div>
+                <label htmlFor="aspectRatio" className="form-label">Aspect Ratio</label>
+                <select id="aspectRatio" name="aspectRatio" value={config.aspectRatio} onChange={handleChange} disabled={isGenerating} className="pro-input">
+                    {Object.entries(ASPECT_RATIOS).map(([key, val])=> ({value: key, label: val.label})).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+             <div>
+                <label htmlFor="numPages" className="form-label">Number of Pages</label>
+                <input type="number" id="numPages" name="numPages" value={config.numPages} onChange={handleChange} min="1" max={MAX_PAGES} className="pro-input" disabled={isGenerating}/>
+            </div>
+            <div>
+                <label htmlFor="seed" className="form-label">Image Seed (0 for random)</label>
+                <input type="number" id="seed" name="seed" value={config.seed} onChange={handleChange} min="0" className="pro-input" disabled={isGenerating}/>
+            </div>
           </div>
-        )}
-
-        {characters.map(char => (
-          <CharacterReferenceInput
-            key={char.id}
-            character={char}
-            onUpdate={updateCharacter}
-            onRemove={removeCharacter}
-          />
-        ))}
-        <button
-          type="button"
-          onClick={addCharacter}
-          className="cyan-button px-4 py-2 text-sm"
-          disabled={isGenerating}
-        >
-          Add Character Reference
-        </button>
+          <div className="mt-6 space-y-4">
+              <label className="pro-checkbox-wrapper">
+                  <input type="checkbox" name="includeCaptions" checked={config.includeCaptions} onChange={handleChange} disabled={isGenerating} className="pro-checkbox" />
+                  <span className="text-sm text-slate-200">Include Captions/Dialogues</span>
+              </label>
+              <label className="pro-checkbox-wrapper">
+                  <input type="checkbox" name="overlayText" checked={config.overlayText} onChange={handleChange} disabled={isGenerating || !config.includeCaptions} className="pro-checkbox" />
+                  <span className="text-sm text-slate-200">Overlay Text on Image (Experimental)</span>
+              </label>
+          </div>
       </div>
 
-
-      <div className="space-y-3 mt-4">
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input type="checkbox" name="includeCaptions" checked={config.includeCaptions} onChange={handleChange} disabled={isGenerating} className="form-checkbox h-5 w-5 rounded" />
-          <span className="text-slate-200">Include Captions/Dialogues</span>
-        </label>
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input type="checkbox" name="overlayText" checked={config.overlayText} onChange={handleChange} disabled={isGenerating || !config.includeCaptions} className="form-checkbox h-5 w-5 rounded" />
-          <span className="text-slate-200">Overlay Text on Image (Experimental)</span>
-        </label>
+      <div>
+        <h3 className="section-header">Character References</h3>
+        <div className="p-4 bg-slate-950 rounded-lg">
+            <p className="text-sm text-slate-400 mb-4">
+              Add characters and reference images for better consistency. For non-multimodal models, an AI-generated description of the images will be used in the prompt.
+            </p>
+            {characters.map(char => (
+            <CharacterReferenceInput
+                key={char.id}
+                character={char}
+                onUpdate={updateCharacter}
+                onRemove={removeCharacter}
+            />
+            ))}
+            <button
+            type="button"
+            onClick={addCharacter}
+            className="pro-button pro-button-secondary"
+            disabled={isGenerating}
+            >
+            Add Character
+            </button>
+        </div>
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 pt-8 border-t border-slate-800 text-right">
         <button
           type="submit"
           disabled={isGenerating || (storyWordCount > 0 && (storyWordCount < MIN_STORY_LENGTH || storyWordCount > MAX_STORY_LENGTH)) || config.numPages <= 0 || config.numPages > MAX_PAGES}
-          className="cyan-button text-lg font-bold px-8 py-3 w-full md:w-auto"
+          className="pro-button pro-button-primary w-full md:w-auto text-base"
         >
           {isGenerating ? <LoadingSpinner size="sm" text="Generating..." /> : 'Generate Comic'}
         </button>
