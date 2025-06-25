@@ -94,7 +94,10 @@ const App: React.FC = () => {
     
     const charPromptPart = currentCharacters.length > 0 ? `\n\nReferenced Characters: ${characterDetails}. If these characters are mentioned in a panel, ensure their descriptions are consistent with any provided image references or generated textual descriptions. If using a multimodal image model that accepts images, these references might be passed directly.` : '';
 
-    const systemInstruction = `You are an expert comic scriptwriter. Your task is to break down the following story into ${currentConfig.numPages} distinct comic panels. For each panel, provide a "sceneDescription" (visual details for the artist, including character actions, expressions, and setting) and a "dialogueOrCaption". The "dialogueOrCaption" MUST contain the speech for characters, thoughts, sound effects, or narrator text for the panel. If there is no direct speech, provide a brief narrator's caption describing the moment or setting the scene. Do not leave "dialogueOrCaption" empty unless absolutely no text is suitable for the panel; in such rare cases, use " " (a single space). ${charPromptPart} Your response MUST be a valid JSON array of objects, where each object has keys "sceneDescription" and "dialogueOrCaption". Do NOT include any explanatory text, comments, markdown, or any characters whatsoever before the opening '[' or after the closing ']' of the JSON array. ONLY THE JSON ARRAY. Example: [{"sceneDescription": "...", "dialogueOrCaption": "..."}]`;
+    const systemInstructionPart1 = `You are an expert comic scriptwriter. Your task is to break down the following story into ${currentConfig.numPages} distinct comic panels. For each panel, provide a "sceneDescription" (visual details for the artist, including character actions, expressions, and setting) and a "dialogueOrCaption". The "dialogueOrCaption" MUST contain the speech for characters, thoughts, sound effects, or narrator text for the panel. If there is no direct speech, provide a brief narrator's caption describing the moment or setting the scene. Do not leave "dialogueOrCaption" empty unless absolutely no text is suitable for the panel; in such rare cases, use " " (a single space). ${charPromptPart} `;
+    const systemInstructionPart2 = `Your response MUST be a valid JSON array of objects, where each object has keys "sceneDescription" and "dialogueOrCaption". Do NOT include any explanatory text, comments, markdown, or any characters whatsoever before the opening '[' or after the closing ']' of the JSON array. ONLY THE JSON ARRAY. `;
+    const systemInstructionPart3 = `Example: [{"sceneDescription": "A hero stands on a cliff", "dialogueOrCaption": "I must save the city!"}]`;
+    const systemInstruction = systemInstructionPart1 + systemInstructionPart2 + systemInstructionPart3;
     
     const userPrompt = `Story Script: """${currentConfig.storyScript}"""\n\nGenerate ${currentConfig.numPages} panels.`;
 
@@ -155,4 +158,283 @@ const App: React.FC = () => {
           const firstBrace = jsonStr.indexOf('{');
           const lastBrace = jsonStr.lastIndexOf('}');
            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace && jsonStr.trim().startsWith("{") && jsonStr.trim().endsWith("}")) {
-             console.warn("Ext
+             console.warn("Extracted content looks like a single object, wrapping in array.");
+             jsonStr = `[${jsonStr}]`;
+           } else {
+             console.error("Could not find a clear JSON array structure even after aggressive extraction.");
+             throw parseError1;
+           }
+        }
+      }
+      let parsedPanels = JSON.parse(jsonStr) as PanelContent[];
+      if (!Array.isArray(parsedPanels) || !parsedPanels.every(p => p.sceneDescription && (typeof p.dialogueOrCaption !== 'undefined'))) {
+        throw new Error("AI did not return valid panel data. Expected an array of {sceneDescription, dialogueOrCaption}.");
+      }
+      
+      // Ensure dialogueOrCaption is never truly empty after second parse attempt
+      parsedPanels = parsedPanels.map(p => ({
+        ...p,
+        dialogueOrCaption: (p.dialogueOrCaption === null || p.dialogueOrCaption === undefined || p.dialogueOrCaption.trim() === "") ? " " : p.dialogueOrCaption,
+      }));
+
+      setOverallProgress('Panel content generated. Starting image generation...');
+      return parsedPanels.slice(0, currentConfig.numPages);
+
+    } catch (e: any) {
+      console.error("Error generating panel content:", e);
+      console.error("Problematic raw response from AI:", rawTextResponse);
+      console.error("String attempted to be parsed as JSON:", jsonStr);
+      setError(`Failed to generate panel content: ${e.message}. Check console for the AI's raw response.`);
+      throw e;
+    } finally {
+        setIsGeneratingInitialPanels(false);
+    }
+  };
+
+  const generateImageForPanel = async (panelToProcess: GeneratedPanel, panelIndex: number, currentConfig: ComicConfig, currentCharacters: CharacterReference[]) => {
+    setPanels(prevPanels => prevPanels.map((p, idx) => idx === panelIndex ? { ...p, isGenerating: true, imageError: undefined } : p));
+    setOverallProgress(`Generating image for panel ${panelIndex + 1} of ${currentConfig.numPages}...`);
+
+    let imagePrompt = panelToProcess.sceneDescription;
+    imagePrompt += ` Comic Era: ${currentConfig.comicEra}.`;
+    
+    const selectedImageModelDetails = allImageModels.find(m => m.id === currentConfig.imageModel);
+
+    if (currentConfig.imageStyle === "Photorealistic") {
+        if (selectedImageModelDetails?.provider === ApiProvider.POLLINATIONS) {
+            imagePrompt += ` Style: Photorealistic.`; // Simpler for Pollinations
+        } else { // Gemini or other future providers can get more detail
+            imagePrompt += ` Style: Photorealistic (ensure ultra-realistic details, photographic quality, sharp focus, lifelike textures, natural lighting, and accurate human anatomy if applicable).`;
+        }
+    } else {
+        imagePrompt += ` Style: ${currentConfig.imageStyle}.`;
+    }
+    
+    if (currentConfig.overlayText && selectedImageModelDetails?.provider === ApiProvider.POLLINATIONS && panelToProcess.dialogueOrCaption && panelToProcess.dialogueOrCaption.trim() !== "") {
+        imagePrompt += ` The following text should appear on the image: "${panelToProcess.dialogueOrCaption.trim()}".`;
+    }
+
+    let referenceImageBlobs: { data: string; mimeType: string }[] | undefined = undefined;
+
+    if (currentConfig.imageModel === GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID && currentCharacters.length > 0) {
+        referenceImageBlobs = [];
+        for (const char of currentCharacters) {
+            const charNameRegex = new RegExp(`\\b${char.name}\\b`, 'i');
+            if (charNameRegex.test(panelToProcess.sceneDescription) || charNameRegex.test(panelToProcess.dialogueOrCaption)) {
+                if(char.images.length > 0) {
+                    imagePrompt += ` Featuring ${char.name} (refer to provided images for appearance).`;
+                    char.images.forEach(img => referenceImageBlobs!.push({ data: img.base64.split(',')[1], mimeType: img.file.type }));
+                } else {
+                     imagePrompt += ` Featuring ${char.name}.`;
+                }
+            }
+        }
+        if(referenceImageBlobs.length === 0) referenceImageBlobs = undefined;
+    } else if (currentCharacters.length > 0) { // Textual description injection for other models
+        currentCharacters.forEach(char => {
+            const charNameRegex = new RegExp(`\\b${char.name}\\b`, 'i');
+            if (charNameRegex.test(panelToProcess.sceneDescription) || charNameRegex.test(panelToProcess.dialogueOrCaption)) {
+                if (char.detailedTextDescription && char.detailedTextDescription.trim() !== "") {
+                    imagePrompt += ` Important Character: ${char.name}. An AI has analyzed reference images for ${char.name} and provided this detailed visual description: "${char.detailedTextDescription.trim()}". It is CRUCIAL that ${char.name} in this image strictly matches this AI-generated description, especially facial features and distinctive visual traits. Prioritize this description for ${char.name}'s appearance.`;
+                } else {
+                    imagePrompt += ` Featuring ${char.name}.`; 
+                    if (char.images.length > 0 && (!char.detailedTextDescription || char.detailedTextDescription.trim() === "")) {
+                        console.warn(`Character ${char.name} has reference images, but no detailed textual description was successfully generated or available. Image consistency for this character will rely on name only for image model ${currentConfig.imageModel}.`);
+                    }
+                }
+            }
+        });
+    }
+
+    try {
+      let imageUrl: string;
+      const highQualityGemini = selectedImageModelDetails?.provider === ApiProvider.GEMINI;
+
+      if (selectedImageModelDetails?.provider === ApiProvider.GEMINI) {
+        if (apiKeyError && currentConfig.imageModel.startsWith('gemini')) {
+             throw new Error("Gemini API key is not configured. Cannot use Gemini image models.");
+        }
+        const geminiResponse: GenerateImageResponse = await generateImageWithGemini(
+          currentConfig.imageModel,
+          imagePrompt,
+          1,
+          currentConfig.seed,
+          ASPECT_RATIOS[currentConfig.aspectRatio],
+          referenceImageBlobs,
+          'image/png',
+          highQualityGemini
+        );
+        if (!geminiResponse.generatedImages || geminiResponse.generatedImages.length === 0 || !geminiResponse.generatedImages[0].image.imageBytes) {
+            throw new Error("Gemini image generation did not return image data.");
+        }
+        imageUrl = `data:image/png;base64,${geminiResponse.generatedImages[0].image.imageBytes}`;
+      
+      } else if (selectedImageModelDetails?.provider === ApiProvider.POLLINATIONS) {
+        imageUrl = await generateImageWithPollinations(
+          currentConfig.imageModel,
+          imagePrompt,
+          currentConfig.seed,
+          currentConfig.aspectRatio
+        );
+      } else {
+        throw new Error(`Unknown image model provider for ${currentConfig.imageModel}`);
+      }
+      setPanels(prevPanels => prevPanels.map((p, idx) => idx === panelIndex ? { ...p, imageUrl, isGenerating: false } : p));
+    } catch (e: any) {
+      console.error(`Error generating image for panel ${panelIndex + 1}:`, e);
+      setPanels(prevPanels => prevPanels.map((p, idx) => idx === panelIndex ? { ...p, imageError: e.message, isGenerating: false } : p));
+    }
+  };
+
+
+  const handleConfigSubmit = async (submittedConfig: ComicConfig, submittedCharacters: CharacterReference[]) => {
+    setConfig(submittedConfig);
+    setCharacters(submittedCharacters); 
+    setPanels([]);
+    setError(null);
+    setIsGeneratingComic(true);
+    let charactersWithDescriptions = [...submittedCharacters]; 
+
+    const needsCharacterAnalysis = submittedCharacters.some(c => c.images.length > 0) &&
+                                submittedConfig.imageModel !== GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID &&
+                                submittedConfig.characterAnalysisModel;
+
+    if (needsCharacterAnalysis) {
+        setIsAnalyzingCharacters(true);
+        setOverallProgress('Analyzing character reference images...');
+        try {
+            for (let i = 0; i < charactersWithDescriptions.length; i++) {
+                const char = charactersWithDescriptions[i];
+                if (char.images.length > 0 && submittedConfig.characterAnalysisModel) {
+                     setOverallProgress(`Analyzing character: ${char.name}...`);
+                    const base64Images = char.images.map(img => ({ data: img.base64.split(',')[1], mimeType: img.file.type }));
+                    const description = await analyzeCharacterWithGemini(submittedConfig.characterAnalysisModel, char.name, base64Images);
+                    charactersWithDescriptions[i] = { ...char, detailedTextDescription: description };
+                    console.log(`Generated description for ${char.name}: ${description && description.trim() !== "" ? description.substring(0, 100) + '...' : '(empty description)'}`);
+                }
+            }
+            setCharacters(charactersWithDescriptions); 
+        } catch (e: any) {
+            console.error("Error during character analysis:", e);
+            setError(`Failed to analyze characters: ${e.message}. Proceeding without detailed textual descriptions for some characters.`);
+        } finally {
+            setIsAnalyzingCharacters(false);
+        }
+    }
+
+
+    setOverallProgress('Initializing comic generation...');
+
+    try {
+      const panelContents = await generateAllPanelContents(submittedConfig, charactersWithDescriptions);
+      
+      const initialGeneratedPanels: GeneratedPanel[] = panelContents.map((content, index) => ({
+        id: `${Date.now()}-${index}`,
+        ...content,
+        isGenerating: true,
+      }));
+      setPanels(initialGeneratedPanels);
+
+      for (let i = 0; i < initialGeneratedPanels.length; i++) {
+        await generateImageForPanel(initialGeneratedPanels[i], i, submittedConfig, charactersWithDescriptions);
+      }
+      setOverallProgress('Comic generation complete!');
+    } catch (e) {
+      console.error("Comic generation process failed:", e);
+      if (!error && e instanceof Error) { 
+        setError(`Comic generation failed: ${e.message}. Check console for details.`);
+      } else if (!error) {
+        setError("An unknown error occurred during comic generation. Check console.");
+      }
+    } finally {
+      setIsGeneratingComic(false);
+      setIsGeneratingInitialPanels(false);
+      setIsAnalyzingCharacters(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (panels.length === 0 || panels.some(p => p.isGenerating)) {
+      alert('Please wait for all panels to generate or ensure there are panels to download.');
+      return;
+    }
+    const title = config?.storyScript.substring(0, 30).replace(/\s+/g, '_') || 'My_AI_Comic';
+    downloadComicAsPDF(panels, title);
+  };
+
+  const isLoading = isGeneratingComic || isGeneratingInitialPanels || isAnalyzingCharacters;
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 selection:bg-pink-500 selection:text-white">
+      <header className="text-center mb-8">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-2 neon-text">
+          AI Comic Creator
+        </h1>
+        <p className="text-slate-400 mt-2">Craft your own comic book pages with the power of AI!</p>
+      </header>
+
+      {apiKeyError && (
+        <div className="bg-red-800/50 border border-red-600 text-red-200 p-4 rounded-lg mb-6 text-center shadow-lg">
+          <p className="font-semibold">Configuration Error:</p>
+          <p>{apiKeyError}</p>
+        </div>
+      )}
+
+      <main className="max-w-6xl mx-auto space-y-8">
+        <ConfigForm
+          onSubmit={handleConfigSubmit}
+          isGenerating={isLoading}
+          initialConfig={config || undefined}
+          initialCharacters={characters}
+        />
+
+        {isLoading && overallProgress && (
+          <div className="text-center my-6 p-4 bg-slate-800/70 rounded-lg shadow-md">
+            <LoadingSpinner text={overallProgress} size="md" />
+          </div>
+        )}
+
+        {error && !isLoading && ( 
+          <div className="bg-red-500/30 border border-red-500 text-red-200 p-4 rounded-lg text-center shadow-md">
+            <p className="font-semibold">An Error Occurred:</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {panels.length > 0 && (
+          <section className="mt-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-cyan-400 neon-text">Your Comic</h2>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isLoading || panels.some(p => p.isGenerating || !!p.imageError)}
+                className="neon-button px-6 py-2 rounded-lg shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
+              >
+                Download as PDF
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {panels.map((panel, index) => (
+                <ComicPanel
+                  key={panel.id}
+                  panel={panel}
+                  panelNumber={index + 1}
+                  overlayTextGlobal={config?.overlayText || false}
+                  aspectRatioClass={getAspectRatioClass(config?.aspectRatio || '16:9')}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="text-center mt-12 py-6 border-t border-slate-700">
+        <p className="text-sm text-slate-500">
+          AI Comic Creator &copy; {new Date().getFullYear()}. Powered by AI.
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
