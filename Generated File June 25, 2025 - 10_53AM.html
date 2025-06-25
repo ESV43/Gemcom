@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Comic Creator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="neon-text">AI Comic Creator</h1>
+            <p>Turn your stories into stunning comic strips!</p>
+        </header>
+
+        <form id="comic-form">
+            <div class="form-section">
+                <label for="api-key" class="neon-text">Gemini API Key (Optional)</label>
+                <input type="password" id="api-key" name="api-key" placeholder="Enter your key for Gemini models">
+            </div>
+
+            <div class="form-section">
+                <label for="story" class="neon-text">Your Story</label>
+                <textarea id="story" name="story" rows="8" minlength="10" maxlength="10000" placeholder="Type or paste your comic story here... (min. 10 characters)"></textarea>
+            </div>
+
+            <div class="grid-container">
+                <div class="form-group">
+                    <label for="ai-service" class="neon-text">AI Service</label>
+                    <select id="ai-service" name="ai-service">
+                        <option value="pollinations">Pollinations (Free)</option>
+                        <option value="gemini">Gemini (API Key Required)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="comic-style" class="neon-text">Comic Style</label>
+                    <select id="comic-style" name="comic-style">
+                        <option value="2d-animation">2D Animation</option>
+                        <option value="3d-render">3D Render</option>
+                        <option value="photorealistic">Photorealistic</option>
+                        <option value="manga">Manga</option>
+                        <option value="pixel-art">Pixel Art</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="comic-era" class="neon-text">Comic Era</label>
+                    <select id="comic-era" name="comic-era">
+                        <option value="vintage">Vintage (1950s-70s)</option>
+                        <option value="modern">Modern (2000s-Present)</option>
+                        <option value="futuristic">Futuristic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="aspect-ratio" class="neon-text">Aspect Ratio</label>
+                    <select id="aspect-ratio" name="aspect-ratio">
+                        <option value="1:1">Square (1:1)</option>
+                        <option value="16:9">Widescreen (16:9)</option>
+                        <option value="9:16">Portrait (9:16)</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="pages" class="neon-text">Number of Pages (1-200)</label>
+                    <input type="number" id="pages" name="pages" min="1" max="200" value="1">
+                </div>
+            </div>
+            
+            <div class="grid-container">
+                <div class="form-group">
+                    <label for="text-model" class="neon-text">Text Generation Model</label>
+                    <select id="text-model" name="text-model"></select>
+                </div>
+                <div class="form-group">
+                    <label for="image-model" class="neon-text">Image Generation Model</label>
+                    <select id="image-model" name="image-model"></select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="neon-text">Advanced Options</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="captions" name="captions" checked>
+                    <label for="captions">Include Captions & Dialogues</label>
+                </div>
+                <div id="caption-placement-group">
+                    <label for="caption-placement">Placement:</label>
+                    <select id="caption-placement" name="caption-placement">
+                        <option value="below">Show in UI (below Image)</option>
+                        <option value="in-image">Embed in Image (Experimental)</option>
+                    </select>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="lock-seed" name="lock-seed">
+                    <label for="lock-seed">Lock Seed (Maintain Character Consistency)</label>
+                </div>
+            </div>
+            
+            <div class="form-section" id="character-references">
+                <h3 class="neon-text">Character References (Up to 5)</h3>
+                <div id="reference-inputs"></div>
+                <button type="button" id="add-character-btn">+ Add Character</button>
+            </div>
+
+
+            <div class="form-section">
+                <button type="submit" id="create-comic-btn" class="cta-button">
+                    <span class="neon-text">Create My Comic!</span>
+                </button>
+                <button type="button" id="download-pdf-btn" class="cta-button" disabled>
+                    <span class="neon-text">Download as PDF</span>
+                </button>
+            </div>
+        </form>
+
+        <div id="loading-indicator" class="hidden">
+            <div class="spinner"></div>
+            <p class="neon-text">Generating your comic...</p>
+        </div>
+        
+        <div id="error-message" class="hidden"></div>
+
+        <div id="comic-output"></div>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
