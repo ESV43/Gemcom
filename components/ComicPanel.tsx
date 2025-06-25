@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GeneratedPanel } from '../types';
 import LoadingSpinner from './LoadingSpinner';
@@ -42,7 +41,7 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
   const displayImageError = panel.imageError || imageErrorState;
 
   return (
-    <div id={pdfPanelId} className="bg-slate-800/70 p-4 rounded-xl shadow-xl neon-border border-2 border-transparent hover:border-pink-500/70 transition-all duration-300 mb-6 flex flex-col items-center w-full">
+    <div id={pdfPanelId} className="comic-panel-container bg-slate-800/70 p-4 rounded-xl mb-6 flex flex-col items-center w-full">
       <h3 className="text-xl font-semibold text-pink-400 mb-3 neon-text">Panel {panelNumber}</h3>
       
       <div className={`relative w-full ${aspectRatioClass} bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center mb-3 shadow-inner`}>
