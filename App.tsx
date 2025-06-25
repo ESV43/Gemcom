@@ -22,7 +22,9 @@ const App: React.FC = () => {
   const [isGeneratingInitialPanels, setIsGeneratingInitialPanels] = useState<boolean>(false);
   const [isAnalyzingCharacters, setIsAnalyzingCharacters] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string>(process.env[GEMINI_API_KEY_ENV_VAR] || '');
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
 
   const [allTextModels, setAllTextModels] = useState<ModelOption[]>(DEFAULT_TEXT_MODELS);
   const [allImageModels, setAllImageModels] = useState<ModelOption[]>(DEFAULT_IMAGE_MODELS);
@@ -31,10 +33,7 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
-    if (!process.env[GEMINI_API_KEY_ENV_VAR]) {
-      setApiKeyError(`Gemini API Key (process.env.${GEMINI_API_KEY_ENV_VAR}) is not set. Gemini models will not work.`);
-    }
-
+    // This effect now just serves to fetch models, API key check is done at generation time
     const fetchAllModels = async () => {
       try {
         const [pollinationsText, pollinationsImage] = await Promise.all([
@@ -68,6 +67,16 @@ const App: React.FC = () => {
     };
     fetchAllModels();
   }, []);
+  
+  const validateApiKey = () => {
+      if (!apiKey) {
+          const keyError = 'A Gemini API Key is required. Please enter one in the field above or set it as an environment variable.';
+          setApiKeyError(keyError);
+          return false;
+      }
+      setApiKeyError(null);
+      return true;
+  }
 
   const getAspectRatioClass = (aspectRatioKey: string): string => {
     switch (aspectRatioKey) {
@@ -107,10 +116,11 @@ const App: React.FC = () => {
       const selectedTextModel = allTextModels.find(m => m.id === currentConfig.textModel);
 
       if (selectedTextModel?.provider === ApiProvider.GEMINI) {
-        if (apiKeyError && currentConfig.textModel.startsWith('gemini')) {
-             throw new Error("Gemini API key is not configured. Cannot use Gemini text models.");
+        if (!validateApiKey()) {
+            throw new Error(apiKeyError || "Gemini API key is not configured.");
         }
         const response: GenerateContentResponseWithMetadata = await generateTextWithGemini(
+          apiKey,
           currentConfig.textModel,
           userPrompt,
           systemInstruction
@@ -136,7 +146,6 @@ const App: React.FC = () => {
          if (!Array.isArray(parsedPanelsAttempt1) || !parsedPanelsAttempt1.every(p => p.sceneDescription && (typeof p.dialogueOrCaption !== 'undefined'))) {
             throw new Error("AI did not return valid panel data structure in initial parse.");
         }
-        // Ensure dialogueOrCaption is never truly empty
         const processedPanels = parsedPanelsAttempt1.map(p => ({
             ...p,
             dialogueOrCaption: (p.dialogueOrCaption === null || p.dialogueOrCaption === undefined || p.dialogueOrCaption.trim() === "") ? " " : p.dialogueOrCaption,
@@ -170,7 +179,6 @@ const App: React.FC = () => {
         throw new Error("AI did not return valid panel data. Expected an array of {sceneDescription, dialogueOrCaption}.");
       }
       
-      // Ensure dialogueOrCaption is never truly empty after second parse attempt
       parsedPanels = parsedPanels.map(p => ({
         ...p,
         dialogueOrCaption: (p.dialogueOrCaption === null || p.dialogueOrCaption === undefined || p.dialogueOrCaption.trim() === "") ? " " : p.dialogueOrCaption,
@@ -201,8 +209,8 @@ const App: React.FC = () => {
 
     if (currentConfig.imageStyle === "Photorealistic") {
         if (selectedImageModelDetails?.provider === ApiProvider.POLLINATIONS) {
-            imagePrompt += ` Style: Photorealistic.`; // Simpler for Pollinations
-        } else { // Gemini or other future providers can get more detail
+            imagePrompt += ` Style: Photorealistic.`;
+        } else {
             imagePrompt += ` Style: Photorealistic (ensure ultra-realistic details, photographic quality, sharp focus, lifelike textures, natural lighting, and accurate human anatomy if applicable).`;
         }
     } else {
@@ -229,7 +237,7 @@ const App: React.FC = () => {
             }
         }
         if(referenceImageBlobs.length === 0) referenceImageBlobs = undefined;
-    } else if (currentCharacters.length > 0) { // Textual description injection for other models
+    } else if (currentCharacters.length > 0) {
         currentCharacters.forEach(char => {
             const charNameRegex = new RegExp(`\\b${char.name}\\b`, 'i');
             if (charNameRegex.test(panelToProcess.sceneDescription) || charNameRegex.test(panelToProcess.dialogueOrCaption)) {
@@ -250,10 +258,11 @@ const App: React.FC = () => {
       const highQualityGemini = selectedImageModelDetails?.provider === ApiProvider.GEMINI;
 
       if (selectedImageModelDetails?.provider === ApiProvider.GEMINI) {
-        if (apiKeyError && currentConfig.imageModel.startsWith('gemini')) {
-             throw new Error("Gemini API key is not configured. Cannot use Gemini image models.");
+         if (!validateApiKey()) {
+            throw new Error(apiKeyError || "Gemini API key is not configured.");
         }
         const geminiResponse: GenerateImageResponse = await generateImageWithGemini(
+          apiKey,
           currentConfig.imageModel,
           imagePrompt,
           1,
@@ -291,6 +300,18 @@ const App: React.FC = () => {
     setCharacters(submittedCharacters); 
     setPanels([]);
     setError(null);
+    setApiKeyError(null);
+
+    const usesGemini = submittedConfig.textModel.includes('gemini') || 
+                       submittedConfig.imageModel.includes('gemini') ||
+                       (submittedCharacters.some(c => c.images.length > 0) && submittedConfig.characterAnalysisModel);
+    
+    if (usesGemini && !validateApiKey()) {
+        setIsGeneratingComic(false);
+        return;
+    }
+
+
     setIsGeneratingComic(true);
     let charactersWithDescriptions = [...submittedCharacters]; 
 
@@ -307,7 +328,7 @@ const App: React.FC = () => {
                 if (char.images.length > 0 && submittedConfig.characterAnalysisModel) {
                      setOverallProgress(`Analyzing character: ${char.name}...`);
                     const base64Images = char.images.map(img => ({ data: img.base64.split(',')[1], mimeType: img.file.type }));
-                    const description = await analyzeCharacterWithGemini(submittedConfig.characterAnalysisModel, char.name, base64Images);
+                    const description = await analyzeCharacterWithGemini(apiKey, submittedConfig.characterAnalysisModel, char.name, base64Images);
                     charactersWithDescriptions[i] = { ...char, detailedTextDescription: description };
                     console.log(`Generated description for ${char.name}: ${description && description.trim() !== "" ? description.substring(0, 100) + '...' : '(empty description)'}`);
                 }
@@ -364,27 +385,23 @@ const App: React.FC = () => {
   const isLoading = isGeneratingComic || isGeneratingInitialPanels || isAnalyzingCharacters;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 selection:bg-pink-500 selection:text-white">
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 selection:bg-fuchsia-500/50 selection:text-white">
       <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-2 neon-text">
+        <h1 className="text-4xl md:text-5xl font-extrabold neon-text-header py-2">
           AI Comic Creator
         </h1>
         <p className="text-slate-400 mt-2">Craft your own comic book pages with the power of AI!</p>
       </header>
-
-      {apiKeyError && (
-        <div className="bg-red-800/50 border border-red-600 text-red-200 p-4 rounded-lg mb-6 text-center shadow-lg">
-          <p className="font-semibold">Configuration Error:</p>
-          <p>{apiKeyError}</p>
-        </div>
-      )}
-
+      
       <main className="max-w-6xl mx-auto space-y-8">
         <ConfigForm
           onSubmit={handleConfigSubmit}
           isGenerating={isLoading}
           initialConfig={config || undefined}
           initialCharacters={characters}
+          apiKey={apiKey}
+          onApiKeyChange={setApiKey}
+          apiKeyError={apiKeyError}
         />
 
         {isLoading && overallProgress && (
@@ -401,13 +418,13 @@ const App: React.FC = () => {
         )}
 
         {panels.length > 0 && (
-          <section className="mt-8">
+          <section className="mt-12">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-cyan-400 neon-text">Your Comic</h2>
+              <h2 className="text-3xl font-bold neon-text-header">Your Comic</h2>
               <button
                 onClick={handleDownloadPdf}
                 disabled={isLoading || panels.some(p => p.isGenerating || !!p.imageError)}
-                className="neon-button px-6 py-2"
+                className="cyan-button px-6 py-2"
               >
                 Download as PDF
               </button>
