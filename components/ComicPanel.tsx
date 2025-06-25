@@ -28,27 +28,22 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
   const handleImageError = () => {
     setImageLoaded(true); 
     setImageErrorState(true);
-    console.error(
-        `ERROR: Image could not be loaded for panel ${panelNumber}. Problematic URL: ${panel.imageUrl}`,
-        'Panel Data:', panel,
-        'If this issue persists with a specific image provider (e.g., Pollinations.ai), try selecting a different image model or simplifying the panel\'s scene description.'
-      );
   };
   
-  const textToShow = panel.dialogueOrCaption || "No text for this panel.";
+  const textToShow = panel.dialogueOrCaption || " ";
   const displayImageError = panel.imageError || imageErrorState;
 
   return (
-    <div id={pdfPanelId} className="bg-slate-800/70 p-4 rounded-xl shadow-lg border-2 border-slate-700 hover:border-purple-600 transition-all duration-300 flex flex-col items-center w-full">
-      <h3 className="text-xl font-semibold text-purple-300 mb-3">Panel {panelNumber}</h3>
+    <div id={pdfPanelId} className="comic-panel-card p-3 flex flex-col w-full space-y-3">
+      <h3 className="text-lg font-semibold text-slate-100 text-center">Panel {panelNumber}</h3>
       
-      <div className={`relative w-full ${aspectRatioClass} bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center mb-3 shadow-inner`}>
+      <div className={`relative w-full ${aspectRatioClass} bg-slate-950 rounded-md overflow-hidden flex items-center justify-center shadow-inner`}>
         {panel.isGenerating && <LoadingSpinner text="Generating Image..." />}
         
         {!panel.isGenerating && panel.imageUrl && !displayImageError && (
           <img
             src={panel.imageUrl}
-            alt={`Comic panel ${panelNumber} - ${panel.sceneDescription.substring(0, 50)}...`}
+            alt={`Comic panel ${panelNumber}`}
             className="w-full h-full object-contain"
             onLoad={handleImageLoad}
             onError={handleImageError}
@@ -57,41 +52,33 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
 
         {!panel.isGenerating && displayImageError && (
           <div className="w-full h-full flex flex-col items-center justify-center text-red-400 p-4 text-center">
-            <p className="text-lg font-semibold">Image Error</p>
-            <p className="text-sm">
-                {panel.imageError || "Could not load image. Check console for problematic URL and advice."}
-            </p>
+            <p className="font-semibold">Image Error</p>
+            <p className="text-sm mt-1">{panel.imageError || "Could not load image."}</p>
           </div>
         )}
 
         {!panel.isGenerating && !panel.imageUrl && !displayImageError && (
-             <div className="w-full h-full flex items-center justify-center text-slate-400">Image will appear here.</div>
+             <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">Image will appear here.</div>
         )}
 
         {!panel.isGenerating && panel.imageUrl && !imageLoaded && !displayImageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-700/50">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80">
                 <LoadingSpinner text="Loading Image..." />
             </div>
-        )}
-
-        {overlayTextGlobal && panel.imageUrl && !displayImageError && imageLoaded && (
-          <div className="absolute bottom-4 left-4 right-4 p-1 md:p-2">
-            <div className="speech-bubble speech-bubble-bottom text-sm md:text-base max-h-24 overflow-y-auto">
-              {textToShow}
-            </div>
-          </div>
         )}
       </div>
 
       {!overlayTextGlobal && (
-        <div className="w-full mt-2 p-3 bg-slate-700/50 rounded-md text-slate-200 text-sm italic max-h-32 overflow-y-auto">
-          <strong className="text-purple-300 block mb-1">Scene:</strong>
-          <p className="mb-2 text-xs">{panel.sceneDescription}</p>
-          {panel.dialogueOrCaption && (
-            <>
-              <strong className="text-green-300 block mb-1">Text:</strong>
-              <p className="text-sm">{textToShow}</p>
-            </>
+        <div className="w-full p-3 bg-slate-800/50 rounded-md text-slate-300 text-sm space-y-2">
+          <div>
+            <strong className="text-slate-400 block text-xs font-medium">Scene:</strong>
+            <p className="text-sm">{panel.sceneDescription}</p>
+          </div>
+          {panel.dialogueOrCaption && panel.dialogueOrCaption.trim() && (
+            <div>
+              <strong className="text-slate-400 block text-xs font-medium">Text:</strong>
+              <p className="text-sm italic">"{textToShow}"</p>
+            </div>
           )}
         </div>
       )}
