@@ -9,7 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const referenceInputsContainer = document.getElementById('reference-inputs');
     const captionsCheckbox = document.getElementById('captions');
     const captionPlacementGroup = document.getElementById('caption-placement-group');
-    
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const comicOutput = document.getElementById('comic-output');
+    const errorMessage = document.getElementById('error-message');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
     // --- Initial State ---
     let characterCount = 0;
     const MAX_CHARACTERS = 5;
@@ -29,8 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateModelDropdowns() {
         const selectedService = aiServiceSelect.value;
-        
-        // Populate Text Models
         textModelSelect.innerHTML = '';
         models[selectedService].text.forEach(model => {
             const option = document.createElement('option');
@@ -39,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
             textModelSelect.appendChild(option);
         });
 
-        // Populate Image Models
         imageModelSelect.innerHTML = '';
         models[selectedService].image.forEach(model => {
             const option = document.createElement('option');
@@ -60,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         characterCount++;
-        
         const entry = document.createElement('div');
         entry.className = 'character-reference-entry';
         entry.id = `character-entry-${characterCount}`;
@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="remove-char-btn" data-id="${characterCount}">X</button>
         `;
         referenceInputsContainer.appendChild(entry);
-        
         if (characterCount >= MAX_CHARACTERS) {
             addCharacterBtn.disabled = true;
             addCharacterBtn.textContent = "Max Characters Reached";
@@ -87,6 +86,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function displayError(message) {
+        errorMessage.textContent = `Error: ${message}`;
+        errorMessage.classList.remove('hidden');
+    }
+
+    async function generateWithPollinations(formData) {
+        const story = formData.get('story');
+        const pages = formData.get('pages');
+        const style = formData.get('comic-style');
+        const era = formData.get('comic-era');
+        
+        // 1. Deconstruct story into pages using the text model
+        const textPrompt = `You are a comic script writer. Deconstruct the following story into exactly ${pages} page(s). 
+        For each page, provide a "caption" and a detailed "image_prompt". The image_prompt should describe the scene for an AI image generator, incorporating the comic style: '${style}' and era: '${era}'.
+        Do not include any extra commentary. Your output must be a valid JSON array of objects.
+        Story: "${story}"`;
+
+        try {
+            const textResponse = await fetch('https://text.pollinations.ai/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt: textPrompt, model: 'gpt-3.5-turbo' })
+            });
+
+            if (!textResponse.ok) {
+                throw new Error(`Text generation failed with status: ${textResponse.status}`);
+            }
+            
+            const textResult = await textResponse.json();
+            // The actual content is nested in the response
+            const scriptData = JSON.parse(textResult.output[0]);
+
+            // 2. Generate an image for each page description
+            comicOutput.innerHTML = ''; // Clear previous/placeholder content
+            for (const page of scriptData) {
+                const imagePrompt = encodeURIComponent(page.image_prompt);
+                const imageUrl = `https://image.pollinations.ai/prompt/${imagePrompt}`;
+
+                const comicPage = document.createElement('div');
+                comicPage.className = 'comic-page';
+                
+                const image = document.createElement('img');
+                image.src = imageUrl;
+                image.alt = `Comic panel for: ${page.caption}`;
+                
+                comicPage.appendChild(image);
+                
+                if (captionsCheckbox.checked) {
+                    const captionDiv = document.createElement('div');
+                    captionDiv.className = 'caption';
+                    captionDiv.innerHTML = `<p>${page.caption}</p>`;
+                    comicPage.appendChild(captionDiv);
+                }
+                
+                comicOutput.appendChild(comicPage);
+            }
+            downloadPdfBtn.disabled = false;
+
+        } catch (error) {
+            console.error(error);
+            displayError('Failed to generate comic. Please check the console for details.');
+        }
+    }
+
     // --- Event Listeners ---
     aiServiceSelect.addEventListener('change', updateModelDropdowns);
     captionsCheckbox.addEventListener('change', toggleCaptionPlacement);
@@ -99,47 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    comicForm.addEventListener('submit', (e) => {
+    comicForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log("--- Form Submitted ---");
-        const formData = new FormData(comicForm);
-        for (let [key, value] of formData.entries()) {
-            if (value instanceof File) {
-                console.log(`${key}: ${value.name}`);
-            } else {
-                console.log(`${key}: ${value}`);
-            }
-        }
-        console.log("----------------------");
-        
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const comicOutput = document.getElementById('comic-output');
-        const errorMessage = document.getElementById('error-message');
-
         loadingIndicator.classList.remove('hidden');
-        comicOutput.innerHTML = ''; // Clear previous output
-        errorMessage.classList.add('hidden'); // Hide previous errors
+        comicOutput.innerHTML = '';
+        errorMessage.classList.add('hidden');
+        downloadPdfBtn.disabled = true;
 
+        const formData = new FormData(comicForm);
+        const service = formData.get('ai-service');
 
-        // Simulate an API call with a placeholder comic page
-        setTimeout(() => {
-            loadingIndicator.classList.add('hidden');
-            
-            // Example of adding a comic page
-            const comicPage = document.createElement('div');
-            comicPage.className = 'comic-page';
-            comicPage.innerHTML = `
-                <img src="https://via.placeholder.com/500" alt="Comic panel placeholder">
-                <div class="caption">
-                    <p>This is a placeholder for your generated comic panel.</p>
-                </div>
-            `;
-            comicOutput.appendChild(comicPage);
+        if (service === 'pollinations') {
+            await generateWithPollinations(formData);
+        } else {
+            // Placeholder for Gemini integration
+            displayError("Gemini API integration is not yet implemented.");
+        }
 
-            // Enable download button
-            document.getElementById('download-pdf-btn').disabled = false;
-
-        }, 3000);
+        loadingIndicator.classList.add('hidden');
     });
 
     // --- Initial Setup ---
