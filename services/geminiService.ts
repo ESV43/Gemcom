@@ -1,30 +1,21 @@
-
 import { GoogleGenAI, GenerateContentResponse as GenAIResponseFromSDK, Part, Modality, Candidate as SDKCandidate } from "@google/genai";
 import { GenerateContentResponseWithMetadata, GenerateImageResponse } from '../types';
-import { GEMINI_API_KEY_ENV_VAR, GEMINI_MULTIMODAL_TEXT_MODEL_ID, GEMINI_IMAGEN_MODEL_ID, GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID } from '../constants';
+import { GEMINI_MULTIMODAL_TEXT_MODEL_ID, GEMINI_IMAGEN_MODEL_ID, GEMINI_FLASH_CHAT_IMAGE_GEN_MODEL_ID } from '../constants';
 
-let ai: GoogleGenAI | null = null;
-
-const getApiKey = (): string | undefined => {
-  return process.env[GEMINI_API_KEY_ENV_VAR];
-};
-
-const initializeGemini = (): GoogleGenAI => {
-  if (ai) return ai;
-  const apiKey = getApiKey();
+const initializeGemini = (apiKey: string): GoogleGenAI => {
   if (!apiKey) {
-    throw new Error("Gemini API key is not configured. Please set the API_KEY environment variable.");
+    throw new Error("Gemini API key is not provided. Please set the API_KEY environment variable or enter it in the UI.");
   }
-  ai = new GoogleGenAI({ apiKey });
-  return ai;
+  return new GoogleGenAI({ apiKey });
 };
 
 export const generateTextWithGemini = async (
+  apiKey: string,
   modelId: string,
   prompt: string,
   systemInstruction?: string
 ): Promise<GenerateContentResponseWithMetadata> => {
-  const genAI = initializeGemini();
+  const genAI = initializeGemini(apiKey);
   try {
     const result: GenAIResponseFromSDK = await genAI.models.generateContent({
       model: modelId,
@@ -42,11 +33,12 @@ export const generateTextWithGemini = async (
 };
 
 export const analyzeCharacterWithGemini = async (
+    apiKey: string,
     modelId: string,
     characterName: string,
     referenceImages: { data: string; mimeType: string }[]
 ): Promise<string> => {
-    const genAI = initializeGemini();
+    const genAI = initializeGemini(apiKey);
     const systemInstruction = `You are an expert character artist's assistant. Based on the provided reference images and the name "${characterName}", generate a very detailed visual description of this character. This description is CRITICAL for another AI to draw the character consistently.
 Focus specifically on:
 1.  **Face:** Shape (e.g., oval, round, square), specific eye color and shape, nose type (e.g., aquiline, button), lip shape, any scars, freckles, or notable facial marks.
@@ -81,6 +73,7 @@ Output ONLY the detailed description as plain text. Do not include any conversat
 
 
 export const generateImageWithGemini = async (
+  apiKey: string,
   modelId: string,
   prompt: string,
   numImages: number = 1,
@@ -90,7 +83,7 @@ export const generateImageWithGemini = async (
   outputMimeTypeForImagen?: string,
   highQualityHint: boolean = false
 ): Promise<GenerateImageResponse> => {
-  const genAI = initializeGemini();
+  const genAI = initializeGemini(apiKey);
   let finalPrompt = prompt;
   if (highQualityHint) {
     finalPrompt += " Generate this image at the highest possible quality and resolution, aiming for sharp details suitable for large prints or 4K display if supported by your capabilities.";
