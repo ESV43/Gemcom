@@ -5,7 +5,7 @@ import LoadingSpinner from './LoadingSpinner';
 interface ComicPanelProps {
   panel: GeneratedPanel;
   panelNumber: number;
-  overlayTextGlobal: boolean; // Global setting from App state
+  overlayTextGlobal: boolean; 
   aspectRatioClass: string;
 }
 
@@ -13,11 +13,9 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageErrorState, setImageErrorState] = useState(false);
 
-  // ID for PDF generation
   const pdfPanelId = `comic-panel-pdf-${panel.id}`;
 
   useEffect(() => {
-    // Reset load/error state if panel imageUrl changes (e.g., regeneration)
     setImageLoaded(false);
     setImageErrorState(false);
   }, [panel.imageUrl]);
@@ -28,7 +26,7 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
   };
 
   const handleImageError = () => {
-    setImageLoaded(true); // Stop loading spinner even on error
+    setImageLoaded(true); 
     setImageErrorState(true);
     console.error(
         `ERROR: Image could not be loaded for panel ${panelNumber}. Problematic URL: ${panel.imageUrl}`,
@@ -41,8 +39,8 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
   const displayImageError = panel.imageError || imageErrorState;
 
   return (
-    <div id={pdfPanelId} className="comic-panel-container bg-slate-800/70 p-4 rounded-xl mb-6 flex flex-col items-center w-full">
-      <h3 className="text-xl font-semibold text-pink-400 mb-3 neon-text">Panel {panelNumber}</h3>
+    <div id={pdfPanelId} className="bg-slate-800/70 p-4 rounded-xl shadow-lg border-2 border-slate-700 hover:border-purple-600 transition-all duration-300 flex flex-col items-center w-full">
+      <h3 className="text-xl font-semibold text-purple-300 mb-3">Panel {panelNumber}</h3>
       
       <div className={`relative w-full ${aspectRatioClass} bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center mb-3 shadow-inner`}>
         {panel.isGenerating && <LoadingSpinner text="Generating Image..." />}
@@ -70,13 +68,11 @@ const ComicPanel: React.FC<ComicPanelProps> = ({ panel, panelNumber, overlayText
              <div className="w-full h-full flex items-center justify-center text-slate-400">Image will appear here.</div>
         )}
 
-        {/* Show loading overlay if image isn't loaded yet but URL exists and no error */}
         {!panel.isGenerating && panel.imageUrl && !imageLoaded && !displayImageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-700/50">
                 <LoadingSpinner text="Loading Image..." />
             </div>
         )}
-
 
         {overlayTextGlobal && panel.imageUrl && !displayImageError && imageLoaded && (
           <div className="absolute bottom-4 left-4 right-4 p-1 md:p-2">
