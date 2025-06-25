@@ -45,46 +45,52 @@ const CharacterReferenceInput: React.FC<CharacterReferenceInputProps> = ({ chara
 
   return (
     <div className="p-4 border border-slate-700 rounded-lg bg-slate-800/50 mb-4">
-      <div className="flex justify-between items-center mb-3">
-        <input
-          type="text"
-          value={name}
-          onChange={handleNameChange}
-          placeholder="Character Name"
-          className="dark-input text-white placeholder-slate-400 p-2 flex-grow mr-2"
-        />
+      <div className="flex justify-between items-start mb-3 gap-4">
+        <div className="flex-grow">
+            <label htmlFor={`char-name-${character.id}`} className="form-label !mb-1">Character Name</label>
+            <input
+            id={`char-name-${character.id}`}
+            type="text"
+            value={name}
+            onChange={handleNameChange}
+            placeholder="E.g., Captain Astro"
+            className="pro-input"
+            />
+        </div>
         <button
           onClick={() => onRemove(character.id)}
-          className="remove-button text-sm flex-shrink-0"
+          className="pro-button pro-button-danger mt-7"
         >
           Remove
         </button>
       </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium text-slate-300 mb-1">Reference Images ({character.images.length}/{MAX_CHAR_REF_IMAGES}):</label>
+      <div>
+        <label className="form-label">Reference Images ({character.images.length}/{MAX_CHAR_REF_IMAGES})</label>
         {character.images.length < MAX_CHAR_REF_IMAGES && (
             <input
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
-            className="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-black hover:file:bg-cyan-500 cursor-pointer"
+            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 cursor-pointer"
             />
         )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-2">
-        {character.images.map(img => (
-          <div key={img.id} className="relative group">
-            <img src={img.base64} alt={`Ref ${img.id}`} className="w-full h-24 object-cover rounded-md border-2 border-slate-600 group-hover:border-cyan-500" />
-            <button
-              onClick={() => removeImage(img.id)}
-              className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-500 text-white rounded-full p-0.5 w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Remove image"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
+      {character.images.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-3">
+            {character.images.map(img => (
+            <div key={img.id} className="relative group aspect-square">
+                <img src={img.base64} alt={`Ref ${img.id}`} className="w-full h-full object-cover rounded-md border-2 border-slate-600 group-hover:border-blue-500" />
+                <button
+                onClick={() => removeImage(img.id)}
+                className="absolute top-1 right-1 bg-black/60 hover:bg-red-600/80 text-white rounded-full p-0.5 w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Remove image"
+                >
+                ×
+                </button>
+            </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 };
