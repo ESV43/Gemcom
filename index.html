@@ -1,128 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Comic Creator</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #111827; /* A dark slate matching the app's theme */
+      }
+      /* Custom scrollbar for a more integrated look */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1f2937; /* slate-800 */
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #4f46e5; /* indigo-600 */
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #6366f1; /* indigo-500 */
+      }
+      .neon-text {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ff00ff, 0 0 20px #ff00ff, 0 0 25px #ff00ff, 0 0 30px #ff00ff, 0 0 35px #ff00ff;
+      }
+      .neon-button {
+        background-color: #4f46e5; /* Default: indigo-600 */
+        color: white;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px #4f46e5, 0 0 10px #4f46e5;
+      }
+      .neon-button:hover {
+        box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f1, 0 0 30px #818cf8;
+        border-color: #818cf8; /* indigo-400 */
+        transform: translateY(-2px);
+      }
+      .neon-button:disabled {
+        background-color: #4b5563; /* gray-600 */
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+      .neon-button.text-red-400 { /* For specific red buttons like remove */
+        background-color: transparent;
+        border: 1px solid #f87171; /* red-400 */
+        color: #f87171; /* red-400 */
+        box-shadow: 0 0 5px #f87171;
+      }
+      .neon-button.text-red-400:hover {
+         background-color: rgba(248, 113, 113, 0.1); /* red-400 with alpha */
+         color: #fca5a5; /* red-300 */
+         box-shadow: 0 0 10px #f87171, 0 0 15px #f87171;
+         border-color: #fca5a5; /* red-300 */
+      }
+
+      .neon-border {
+        border-width: 2px;
+        border-style: solid;
+        border-image-slice: 1;
+        border-image-source: linear-gradient(to bottom right, #f472b6, #60a5fa); /* pink-400 to blue-400 */
+        box-shadow: 0 0 10px rgba(244, 114, 182, 0.5), 0 0 10px rgba(96, 165, 250, 0.5);
+      }
+      .neon-button\\:hover:hover { /* Targeting elements with neon-button:hover class on actual hover */
+        /* Styles for inputs etc. that have this class */
+        border-color: #f472b6; /* pink-400 */
+        box-shadow: 0 0 8px #f472b6;
+      }
+      
+      /* Speech bubble style for overlaid text */
+      .speech-bubble {
+        position: relative;
+        background: rgba(30, 41, 59, 0.85); /* slate-800 with opacity */
+        backdrop-filter: blur(4px);
+        border-radius: .4em;
+        color: #e2e8f0; /* slate-200 */
+        padding: 0.5em 0.8em;
+        border: 1px solid rgba(71, 85, 105, 0.7); /* slate-600 with opacity */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      }
+
+      .speech-bubble-bottom:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border: 12px solid transparent;
+        border-top-color: rgba(30, 41, 59, 0.85); /* Match bubble background */
+        border-bottom: 0;
+        margin-left: -12px;
+        margin-bottom: -12px;
+      }
+
+      /* Tailwind form-checkbox custom color */
+      .form-checkbox {
+        appearance: none;
+        padding: 0;
+        display: inline-block;
+        vertical-align: middle;
+        background-origin: border-box;
+        user-select: none;
+        flex-shrink: 0;
+        height: 1em;
+        width: 1em;
+        color: #ec4899; /* pink-500 */
+        background-color: #475569; /* slate-600 */
+        border-color: #64748b; /* slate-500 */
+        border-width: 1px;
+        border-radius: 0.25rem; /* rounded */
+      }
+      .form-checkbox:checked {
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        border-color: transparent;
+        background-color: currentColor; /* Uses the text-pink-500 color */
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      .form-checkbox:focus {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        --tw-ring-offset-width: 2px;
+        --tw-ring-offset-color: #0f172a; /* slate-900 or your app's main bg */
+        --tw-ring-color: #f9a8d4; /* pink-300 - lighter pink for focus */
+        --tw-ring-opacity: 1;
+        box-shadow: var(--tw-ring-offset-width) 0 0 0 var(--tw-ring-offset-color), var(--tw-ring-offset-width) var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), calc(-1 * var(--tw-ring-offset-width)) 0 0 0 var(--tw-ring-offset-color), calc(-1 * var(--tw-ring-offset-width)) var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), 0 var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), 0 0 0 calc(var(--tw-ring-offset-width) + 2px) var(--tw-ring-color);
+      }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.6.0",
+    "axios": "https://esm.sh/axios@^1.10.0",
+    "jspdf": "https://esm.sh/jspdf@^3.0.1",
+    "html2canvas": "https://esm.sh/html2canvas@^1.4.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
 </head>
-<body>
-    <div class="container">
-        <h1>AI Comic Creator</h1>
-
-        <form id="comicForm">
-            <div class="form-group">
-                <label for="storyInput">Comic Story (10-10000 words):</label>
-                <textarea id="storyInput" minlength="10" maxlength="10000" rows="10" placeholder="Enter your comic story here..."></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="geminiApiKey">Google Gemini API Key:</label>
-                <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API Key">
-            </div>
-
-            <div class="form-group">
-                <label for="numPages">Number of Pages (Max 200):</label>
-                <input type="number" id="numPages" min="1" max="200" value="10">
-            </div>
-
-            <div class="form-group">
-                <label for="textModelSelect">Text Generation Model:</label>
-                <select id="textModelSelect">
-                    <optgroup label="Google Gemini API">
-                        <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                    </optgroup>
-                    <optgroup label="Pollinations.AI" id="pollinationsTextModels">
-                        <!-- Pollinations.AI models will be loaded here by JavaScript -->
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="imageModelSelect">Image Generation Model:</label>
-                <select id="imageModelSelect">
-                    <optgroup label="Google Gemini API">
-                        <option value="imagen-3.0-generate-002">Imagen 3</option>
-                        <option value="imagen-4.0-generate-preview-06-06">Imagen 4.0 Preview</option>
-                        <option value="imagen-4.0-ultra-generate-preview-06-06">Imagen 4.0 Ultra Preview</option>
-                        <option value="gemini-2.0-flash-preview-image-generation">Gemini 2.0 Flash Preview (Multimodal)</option>
-                    </optgroup>
-                    <optgroup label="Pollinations.AI" id="pollinationsImageModels">
-                        <!-- Pollinations.AI models will be loaded here by JavaScript -->
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="imageStyleSelect">Image Style:</label>
-                <select id="imageStyleSelect">
-                    <option value="2d-animation">2D Animation</option>
-                    <option value="3d-render">3D Render</option>
-                    <option value="photorealistic">Photorealistic</option>
-                    <option value="anime">Anime</option>
-                    <option value="manga">Manga</option>
-                    <option value="oil-painting">Oil Painting</option>
-                    <option value="watercolor">Watercolor</option>
-                    <option value="pixel-art">Pixel Art</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="comicEraSelect">Comic Era/Art Style:</label>
-                <select id="comicEraSelect">
-                    <option value="golden-age">Golden Age Comics</option>
-                    <option value="silver-age">Silver Age Comics</option>
-                    <option value="modern-comic">Modern Comic Book</option>
-                    <option value="manga-style">Manga Style</option>
-                    <option value="bande-dessinee">European Bande Dessinée</option>
-                    <option value="webcomic">Webcomic Style</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="aspectRatioSelect">Aspect Ratio:</label>
-                <select id="aspectRatioSelect">
-                    <option value="1:1">1:1 Square</option>
-                    <option value="16:9">16:9 Landscape</option>
-                    <option value="9:16">9:16 Portrait</option>
-                    <option value="4:3">4:3 Classic</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Character Consistency (Upload Reference Images):</label>
-                <div id="characterImagesContainer">
-                    <!-- Character image upload fields will be added dynamically by JS -->
-                    <button type="button" class="add-char-btn" id="addCharacterBtn">+ Add Character Reference</button>
-                </div>
-                <p class="note">Upload at least 5 images per character for best consistency. Name each character.</p>
-            </div>
-
-            <div class="form-group checkbox-group">
-                <input type="checkbox" id="showCaptionsBelow">
-                <label for="showCaptionsBelow">Show Captions/Dialogues Below Images</label>
-            </div>
-
-            <div class="form-group checkbox-group">
-                <input type="checkbox" id="showCaptionsInImage">
-                <label for="showCaptionsInImage">Show Captions/Dialogues In Image (Experimental)</label>
-            </div>
-
-            <button type="submit" class="generate-btn">Generate Comic</button>
-            <button type="button" class="download-btn" id="downloadPdfBtn" style="display: none;">Download Comic as PDF</button>
-        </form>
-
-        <div id="comicOutput" class="comic-output">
-            <!-- Generated comic pages will appear here -->
-        </div>
-    </div>
-
-    <!-- jsPDF and html2canvas CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="script.js"></script>
-</body>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>
