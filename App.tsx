@@ -25,15 +25,12 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>(process.env[GEMINI_API_KEY_ENV_VAR] || '');
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
-
   const [allTextModels, setAllTextModels] = useState<ModelOption[]>(DEFAULT_TEXT_MODELS);
   const [allImageModels, setAllImageModels] = useState<ModelOption[]>(DEFAULT_IMAGE_MODELS);
   const [allAnalysisModels, setAllAnalysisModels] = useState<ModelOption[]>(CHARACTER_ANALYSIS_MODELS);
   const [overallProgress, setOverallProgress] = useState<string>('');
 
-
   useEffect(() => {
-    // This effect now just serves to fetch models, API key check is done at generation time
     const fetchAllModels = async () => {
       try {
         const [pollinationsText, pollinationsImage] = await Promise.all([
@@ -58,7 +55,7 @@ const App: React.FC = () => {
           }
         });
         setAllImageModels(combinedImageModels);
-        setAllAnalysisModels(CHARACTER_ANALYSIS_MODELS); // Currently static
+        setAllAnalysisModels(CHARACTER_ANALYSIS_MODELS); 
 
       } catch (e) {
         console.error("Failed to load Pollinations models", e);
@@ -161,7 +158,6 @@ const App: React.FC = () => {
         const lastBracket = jsonStr.lastIndexOf(']');
         if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
           jsonStr = jsonStr.substring(firstBracket, lastBracket + 1);
-          console.log("String after aggressive extraction (Attempt 2):", jsonStr);
         } else {
           const firstBrace = jsonStr.indexOf('{');
           const lastBrace = jsonStr.lastIndexOf('}');
@@ -169,7 +165,6 @@ const App: React.FC = () => {
              console.warn("Extracted content looks like a single object, wrapping in array.");
              jsonStr = `[${jsonStr}]`;
            } else {
-             console.error("Could not find a clear JSON array structure even after aggressive extraction.");
              throw parseError1;
            }
         }
@@ -189,8 +184,6 @@ const App: React.FC = () => {
 
     } catch (e: any) {
       console.error("Error generating panel content:", e);
-      console.error("Problematic raw response from AI:", rawTextResponse);
-      console.error("String attempted to be parsed as JSON:", jsonStr);
       setError(`Failed to generate panel content: ${e.message}. Check console for the AI's raw response.`);
       throw e;
     } finally {
@@ -211,7 +204,7 @@ const App: React.FC = () => {
         if (selectedImageModelDetails?.provider === ApiProvider.POLLINATIONS) {
             imagePrompt += ` Style: Photorealistic.`;
         } else {
-            imagePrompt += ` Style: Photorealistic (ensure ultra-realistic details, photographic quality, sharp focus, lifelike textures, natural lighting, and accurate human anatomy if applicable).`;
+            imagePrompt += ` Style: Photorealistic (ultra-realistic details, photographic quality, sharp focus, lifelike textures, natural lighting).`;
         }
     } else {
         imagePrompt += ` Style: ${currentConfig.imageStyle}.`;
@@ -242,12 +235,9 @@ const App: React.FC = () => {
             const charNameRegex = new RegExp(`\\b${char.name}\\b`, 'i');
             if (charNameRegex.test(panelToProcess.sceneDescription) || charNameRegex.test(panelToProcess.dialogueOrCaption)) {
                 if (char.detailedTextDescription && char.detailedTextDescription.trim() !== "") {
-                    imagePrompt += ` Important Character: ${char.name}. An AI has analyzed reference images for ${char.name} and provided this detailed visual description: "${char.detailedTextDescription.trim()}". It is CRUCIAL that ${char.name} in this image strictly matches this AI-generated description, especially facial features and distinctive visual traits. Prioritize this description for ${char.name}'s appearance.`;
+                    imagePrompt += ` Important Character: ${char.name}. Description: "${char.detailedTextDescription.trim()}". It is CRUCIAL that ${char.name} in this image strictly matches this description.`;
                 } else {
                     imagePrompt += ` Featuring ${char.name}.`; 
-                    if (char.images.length > 0 && (!char.detailedTextDescription || char.detailedTextDescription.trim() === "")) {
-                        console.warn(`Character ${char.name} has reference images, but no detailed textual description was successfully generated or available. Image consistency for this character will rely on name only for image model ${currentConfig.imageModel}.`);
-                    }
                 }
             }
         });
@@ -294,7 +284,6 @@ const App: React.FC = () => {
     }
   };
 
-
   const handleConfigSubmit = async (submittedConfig: ComicConfig, submittedCharacters: CharacterReference[]) => {
     setConfig(submittedConfig);
     setCharacters(submittedCharacters); 
@@ -310,7 +299,6 @@ const App: React.FC = () => {
         setIsGeneratingComic(false);
         return;
     }
-
 
     setIsGeneratingComic(true);
     let charactersWithDescriptions = [...submittedCharacters]; 
@@ -330,18 +318,15 @@ const App: React.FC = () => {
                     const base64Images = char.images.map(img => ({ data: img.base64.split(',')[1], mimeType: img.file.type }));
                     const description = await analyzeCharacterWithGemini(apiKey, submittedConfig.characterAnalysisModel, char.name, base64Images);
                     charactersWithDescriptions[i] = { ...char, detailedTextDescription: description };
-                    console.log(`Generated description for ${char.name}: ${description && description.trim() !== "" ? description.substring(0, 100) + '...' : '(empty description)'}`);
                 }
             }
             setCharacters(charactersWithDescriptions); 
         } catch (e: any) {
-            console.error("Error during character analysis:", e);
-            setError(`Failed to analyze characters: ${e.message}. Proceeding without detailed textual descriptions for some characters.`);
+            setError(`Failed to analyze characters: ${e.message}.`);
         } finally {
             setIsAnalyzingCharacters(false);
         }
     }
-
 
     setOverallProgress('Initializing comic generation...');
 
@@ -360,7 +345,6 @@ const App: React.FC = () => {
       }
       setOverallProgress('Comic generation complete!');
     } catch (e) {
-      console.error("Comic generation process failed:", e);
       if (!error && e instanceof Error) { 
         setError(`Comic generation failed: ${e.message}. Check console for details.`);
       } else if (!error) {
@@ -385,15 +369,15 @@ const App: React.FC = () => {
   const isLoading = isGeneratingComic || isGeneratingInitialPanels || isAnalyzingCharacters;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 selection:bg-fuchsia-500/50 selection:text-white">
-      <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold neon-text-header py-2">
+    <div className="min-h-screen p-4 md:p-8">
+      <header className="text-center mb-12">
+        <h1 className="main-header">
           AI Comic Creator
         </h1>
-        <p className="text-slate-400 mt-2">Craft your own comic book pages with the power of AI!</p>
+        <p className="sub-header">Craft your own comic book pages with the power of AI.</p>
       </header>
       
-      <main className="max-w-6xl mx-auto space-y-8">
+      <main className="max-w-7xl mx-auto space-y-12">
         <ConfigForm
           onSubmit={handleConfigSubmit}
           isGenerating={isLoading}
@@ -405,26 +389,26 @@ const App: React.FC = () => {
         />
 
         {isLoading && overallProgress && (
-          <div className="text-center my-6 p-4 bg-slate-800/70 rounded-lg shadow-md">
+          <div className="text-center my-6 p-4 rounded-lg">
             <LoadingSpinner text={overallProgress} size="md" />
           </div>
         )}
 
         {error && !isLoading && ( 
-          <div className="bg-red-500/30 border border-red-500 text-red-200 p-4 rounded-lg text-center shadow-md">
+          <div className="pro-container bg-red-900/50 border-red-700 text-red-200 p-4 text-center">
             <p className="font-semibold">An Error Occurred:</p>
             <p>{error}</p>
           </div>
         )}
 
         {panels.length > 0 && (
-          <section className="mt-12">
+          <section>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold neon-text-header">Your Comic</h2>
+              <h2 className="section-header pb-0 mb-0 border-none text-3xl font-bold">Your Comic</h2>
               <button
                 onClick={handleDownloadPdf}
                 disabled={isLoading || panels.some(p => p.isGenerating || !!p.imageError)}
-                className="cyan-button px-6 py-2"
+                className="pro-button pro-button-primary"
               >
                 Download as PDF
               </button>
@@ -444,9 +428,9 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="text-center mt-12 py-6 border-t border-slate-700">
+      <footer className="text-center mt-16 py-6 border-t border-slate-800">
         <p className="text-sm text-slate-500">
-          AI Comic Creator © {new Date().getFullYear()}. Powered by AI.
+          AI Comic Creator © {new Date().getFullYear()}.
         </p>
       </footer>
     </div>
