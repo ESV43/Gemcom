@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Comic Creator</title>
     <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.sh/@google/generative-ai"
+        }
+      }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -16,13 +23,13 @@
 
         <form id="comic-form">
             <div class="form-section">
-                <label for="api-key" class="neon-text">Gemini API Key (Optional)</label>
-                <input type="password" id="api-key" name="api-key" placeholder="Enter your key for Gemini models">
+                <label for="api-key" class="neon-text">Gemini API Key</label>
+                <input type="password" id="api-key" name="api-key" placeholder="Enter your key for Gemini models" required>
             </div>
 
             <div class="form-section">
                 <label for="story" class="neon-text">Your Story</label>
-                <textarea id="story" name="story" rows="8" minlength="10" maxlength="10000" placeholder="Type or paste your comic story here... (min. 10 characters)"></textarea>
+                <textarea id="story" name="story" rows="8" minlength="10" maxlength="10000" placeholder="Type or paste your comic story here... (min. 10 characters)" required></textarea>
             </div>
 
             <div class="grid-container">
@@ -122,6 +129,6 @@
         <div id="comic-output"></div>
 
     </div>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
