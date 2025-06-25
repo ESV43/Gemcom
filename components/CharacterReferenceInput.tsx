@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { CharacterReference } from '../types';
 import { MAX_CHAR_REF_IMAGES } from '../constants';
@@ -46,20 +45,20 @@ const CharacterReferenceInput: React.FC<CharacterReferenceInputProps> = ({ chara
   };
 
   return (
-    <div className="p-4 border border-cyan-700 rounded-lg shadow-lg bg-slate-800/50 backdrop-blur-sm mb-4 transition-all duration-300 hover:shadow-cyan-500/50">
+    <div className="p-4 border border-cyan-700/50 rounded-lg shadow-lg bg-slate-800/50 backdrop-blur-sm mb-4 transition-all duration-300 hover:shadow-cyan-500/20">
       <div className="flex justify-between items-center mb-3">
         <input
           type="text"
           value={name}
           onChange={handleNameChange}
           placeholder="Character Name"
-          className="bg-slate-700 text-white placeholder-slate-400 p-2 rounded-md border border-slate-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none flex-grow mr-2 neon-button:hover"
+          className="neon-input text-white placeholder-slate-400 p-2 rounded-md flex-grow mr-2"
         />
         <button
           onClick={() => onRemove(character.id)}
-          className="neon-button text-red-400 hover:text-red-200 hover:bg-red-500/50 px-3 py-1 rounded-md text-sm"
+          className="neon-button-remove px-3 py-1 text-sm flex-shrink-0"
         >
-          Remove Character
+          Remove
         </button>
       </div>
       <div className="mb-2">
@@ -82,7 +81,7 @@ const CharacterReferenceInput: React.FC<CharacterReferenceInputProps> = ({ chara
               className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-500 text-white rounded-full p-0.5 w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
               aria-label="Remove image"
             >
-              &times;
+              ×
             </button>
           </div>
         ))}
