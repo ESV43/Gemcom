@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { ComicConfig, CharacterReference, ModelOption, ApiProvider } from '../types';
 import CharacterReferenceInput from './CharacterReferenceInput';
@@ -160,7 +159,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
           value={value}
           onChange={customOnChange || handleChange}
           disabled={isGenerating}
-          className="w-full p-2.5 bg-slate-700 border border-slate-600 text-white rounded-lg shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-colors duration-200 neon-button:hover"
+          className="w-full p-2.5 text-white rounded-lg shadow-sm neon-input"
         >
           {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
@@ -169,7 +168,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
   );
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6 bg-slate-900/80 backdrop-blur-md rounded-xl shadow-2xl border border-purple-600/50">
+    <form onSubmit={handleSubmit} className="p-6 space-y-6 bg-slate-900/80 backdrop-blur-md rounded-xl shadow-2xl neon-border-container">
       <h2 className="text-3xl font-bold text-center mb-6 text-pink-400 neon-text">Configure Your Comic</h2>
 
       <div>
@@ -181,7 +180,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
           onChange={handleChange}
           rows={8}
           placeholder={`Enter your comic story here (${MIN_STORY_LENGTH}-${MAX_STORY_LENGTH} words)...`}
-          className="w-full p-2.5 bg-slate-700 border border-slate-600 text-white rounded-lg shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none resize-y neon-button:hover"
+          className="w-full p-2.5 text-white rounded-lg shadow-sm resize-y neon-input"
           disabled={isGenerating}
           minLength={MIN_STORY_LENGTH * 4} 
           maxLength={MAX_STORY_LENGTH * 10} 
@@ -220,7 +219,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
             onChange={handleChange}
             min="1"
             max={MAX_PAGES}
-            className="w-full p-2.5 bg-slate-700 border border-slate-600 text-white rounded-lg shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none neon-button:hover"
+            className="w-full p-2.5 text-white rounded-lg shadow-sm neon-input"
             disabled={isGenerating}
           />
         </div>
@@ -235,7 +234,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
             value={config.seed}
             onChange={handleChange}
             min="0"
-            className="w-full p-2.5 bg-slate-700 border border-slate-600 text-white rounded-lg shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none neon-button:hover"
+            className="w-full p-2.5 text-white rounded-lg shadow-sm neon-input"
             disabled={isGenerating}
           />
         </div>
@@ -275,7 +274,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
         <button
           type="button"
           onClick={addCharacter}
-          className="neon-button px-4 py-2 rounded-md text-sm transition-transform hover:scale-105"
+          className="neon-button text-sm"
           disabled={isGenerating}
         >
           Add Character Reference
@@ -285,11 +284,11 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
 
       <div className="space-y-3 mt-4">
         <label className="flex items-center space-x-3 cursor-pointer">
-          <input type="checkbox" name="includeCaptions" checked={config.includeCaptions} onChange={handleChange} disabled={isGenerating} className="form-checkbox h-5 w-5 text-pink-500 bg-slate-600 border-slate-500 rounded focus:ring-pink-400 focus:ring-offset-slate-800" />
+          <input type="checkbox" name="includeCaptions" checked={config.includeCaptions} onChange={handleChange} disabled={isGenerating} className="form-checkbox h-5 w-5" />
           <span className="text-slate-200">Include Captions/Dialogues</span>
         </label>
         <label className="flex items-center space-x-3 cursor-pointer">
-          <input type="checkbox" name="overlayText" checked={config.overlayText} onChange={handleChange} disabled={isGenerating || !config.includeCaptions} className="form-checkbox h-5 w-5 text-pink-500 bg-slate-600 border-slate-500 rounded focus:ring-pink-400 focus:ring-offset-slate-800" />
+          <input type="checkbox" name="overlayText" checked={config.overlayText} onChange={handleChange} disabled={isGenerating || !config.includeCaptions} className="form-checkbox h-5 w-5" />
           <span className="text-slate-200">Overlay Text on Image (Experimental)</span>
         </label>
       </div>
@@ -298,7 +297,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ onSubmit, isGenerating, initial
         <button
           type="submit"
           disabled={isGenerating || (storyWordCount > 0 && (storyWordCount < MIN_STORY_LENGTH || storyWordCount > MAX_STORY_LENGTH)) || config.numPages <= 0 || config.numPages > MAX_PAGES}
-          className="neon-button text-lg font-bold px-8 py-3 rounded-lg shadow-lg hover:shadow-pink-500/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 w-full md:w-auto"
+          className="neon-button text-lg font-bold px-8 py-3 w-full md:w-auto"
         >
           {isGenerating ? <LoadingSpinner size="sm" text="Generating..." /> : 'Generate Comic'}
         </button>
