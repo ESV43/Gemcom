@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-slate-300 font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-panel-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 rounded-lg border-2 border-panel-bg;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
+}
+
+@layer components {
+  /* Main UI Container/Card Style */
+  .pro-container {
+    @apply bg-panel-bg border border-border-color rounded-xl p-6 shadow-lg;
+  }
+
+  /* Typography */
+  .main-header {
+    @apply text-slate-50 text-4xl font-extrabold tracking-tighter;
+    text-shadow: 0 0 8px theme('colors.neon-cyan');
+  }
+  .sub-header {
+    @apply text-slate-400 text-lg mt-2;
+  }
+  .section-header {
+    @apply text-slate-100 text-2xl font-semibold border-b border-border-color pb-3 mb-6;
+  }
+  .form-label {
+    @apply block text-sm font-medium text-slate-300 mb-2;
+  }
+
+  /* Inputs, Selects, Textareas */
+  .pro-input {
+    @apply block w-full bg-slate-800 border border-slate-700 rounded-md text-slate-100 py-2.5 px-3.5 transition-all duration-200;
+  }
+  .pro-input:focus {
+    @apply outline-none border-neon-blue ring-2 ring-neon-blue/30;
+  }
+  .pro-input::placeholder {
+    @apply text-slate-500;
+  }
+
+  /* Buttons */
+  .pro-button {
+    @apply inline-flex items-center justify-center py-2.5 px-5 text-sm font-semibold rounded-md border border-transparent transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .pro-button-primary {
+    @apply bg-neon-blue text-white shadow-md hover:bg-blue-500 disabled:shadow-none;
+  }
+  .pro-button-primary:hover:not(:disabled) {
+    @apply shadow-neon-glow-blue;
+  }
+  .pro-button-secondary {
+    @apply bg-slate-800 text-slate-100 border-slate-700 hover:bg-slate-700 hover:border-slate-600;
+  }
+  .pro-button-danger {
+    @apply text-red-400 bg-transparent py-2 px-3 hover:bg-red-500/10 hover:text-red-500;
+  }
+
+  /* Checkbox */
+  .pro-checkbox-wrapper {
+    @apply flex items-center gap-3;
+  }
+  .pro-checkbox {
+    @apply h-4 w-4 rounded border-slate-600 bg-slate-800 appearance-none cursor-pointer transition-all duration-200;
+  }
+  .pro-checkbox:checked {
+    @apply bg-neon-blue border-neon-blue;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+  }
+  .pro-checkbox:focus {
+    @apply outline-none ring-2 ring-neon-blue/30;
+  }
+
+  /* Comic Panel */
+  .comic-panel-card {
+    @apply bg-panel-bg border border-border-color rounded-lg transition-all duration-300 ease-in-out;
+  }
+  .comic-panel-card:hover {
+    @apply transform -translate-y-1 border-neon-blue shadow-lg shadow-neon-blue/10;
+  }
+}
