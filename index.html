@@ -9,7 +9,9 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #111827; /* A dark slate matching the app's theme */
+        background-color: #0f172a; /* fallback */
+        background-image: radial-gradient(circle at top right, rgba(192, 132, 252, 0.15), transparent 40%),
+                          radial-gradient(circle at bottom left, rgba(34, 211, 238, 0.15), transparent 50%);
       }
       /* Custom scrollbar for a more integrated look */
       ::-webkit-scrollbar {
@@ -17,72 +19,118 @@
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #1f2937; /* slate-800 */
-        border-radius: 10px;
+        background: #1e293b; /* slate-800 */
       }
       ::-webkit-scrollbar-thumb {
-        background: #4f46e5; /* indigo-600 */
+        background: #06b6d4; /* cyan-500 */
         border-radius: 10px;
+        border: 2px solid #1e293b; /* slate-800 */
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #6366f1; /* indigo-500 */
+        background: #22d3ee; /* cyan-400 */
       }
+
+      @keyframes pulse {
+        0%, 100% {
+          text-shadow: 0 0 5px #d946ef, 0 0 10px #d946ef, 0 0 15px #d946ef;
+        }
+        50% {
+          text-shadow: 0 0 10px #d946ef, 0 0 20px #d946ef, 0 0 30px #d946ef;
+        }
+      }
+
       .neon-text {
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ff00ff, 0 0 20px #ff00ff, 0 0 25px #ff00ff, 0 0 30px #ff00ff, 0 0 35px #ff00ff;
+        color: #f0f9ff;
+        animation: pulse 2.5s infinite linear;
       }
+      
+      /* Base for neon inputs/selects */
+      .neon-input {
+        background-color: #1e293b; /* slate-800 */
+        border: 1px solid #334155; /* slate-700 */
+        transition: border-color 0.3s, box-shadow 0.3s;
+      }
+      .neon-input:focus, .neon-input:focus-within {
+        border-color: #22d3ee; /* cyan-400 */
+        box-shadow: 0 0 10px 0px #06b6d4, inset 0 0 5px 0px rgba(6, 182, 212, 0.5);
+        outline: none;
+      }
+      
+      /* Primary Action Button (Cyan) */
       .neon-button {
-        background-color: #4f46e5; /* Default: indigo-600 */
-        color: white;
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
-        box-shadow: 0 0 5px #4f46e5, 0 0 10px #4f46e5;
+        color: #ecfeff;
+        background-color: #0891b2; /* cyan-600 */
+        border: 1px solid #06b6d4; /* cyan-500 */
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        text-shadow: 0 0 3px rgba(236, 254, 255, 0.7);
+        box-shadow: 0 0 5px #06b6d4, inset 0 0 8px rgba(6, 182, 212, 0.8);
+        transition: all 0.2s ease-in-out;
       }
-      .neon-button:hover {
-        box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f1, 0 0 30px #818cf8;
-        border-color: #818cf8; /* indigo-400 */
+      .neon-button:hover:not(:disabled) {
+        color: white;
+        background-color: #06b6d4;
+        box-shadow: 0 0 15px #22d3ee, inset 0 0 10px rgba(34, 211, 238, 0.8);
         transform: translateY(-2px);
       }
       .neon-button:disabled {
-        background-color: #4b5563; /* gray-600 */
-        box-shadow: none;
+        background-color: #334155;
+        border-color: #475569;
+        color: #94a3b8;
         cursor: not-allowed;
-      }
-      .neon-button.text-red-400 { /* For specific red buttons like remove */
-        background-color: transparent;
-        border: 1px solid #f87171; /* red-400 */
-        color: #f87171; /* red-400 */
-        box-shadow: 0 0 5px #f87171;
-      }
-      .neon-button.text-red-400:hover {
-         background-color: rgba(248, 113, 113, 0.1); /* red-400 with alpha */
-         color: #fca5a5; /* red-300 */
-         box-shadow: 0 0 10px #f87171, 0 0 15px #f87171;
-         border-color: #fca5a5; /* red-300 */
+        box-shadow: none;
+        text-shadow: none;
       }
 
-      .neon-border {
-        border-width: 2px;
-        border-style: solid;
-        border-image-slice: 1;
-        border-image-source: linear-gradient(to bottom right, #f472b6, #60a5fa); /* pink-400 to blue-400 */
-        box-shadow: 0 0 10px rgba(244, 114, 182, 0.5), 0 0 10px rgba(96, 165, 250, 0.5);
+      /* Remove/Destructive Button (Red/Pink) */
+      .neon-button-remove {
+        color: #fda4af; /* red-300 */
+        background-color: transparent;
+        border: 1px solid #f43f5e; /* rose-500 */
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        text-shadow: 0 0 3px rgba(253, 164, 175, 0.7);
+        box-shadow: 0 0 5px #f43f5e, inset 0 0 8px rgba(244, 63, 94, 0.6);
+        transition: all 0.2s ease-in-out;
       }
-      .neon-button\\:hover:hover { /* Targeting elements with neon-button:hover class on actual hover */
-        /* Styles for inputs etc. that have this class */
-        border-color: #f472b6; /* pink-400 */
-        box-shadow: 0 0 8px #f472b6;
+      .neon-button-remove:hover:not(:disabled) {
+        color: #fee2e2;
+        background-color: rgba(244, 63, 94, 0.3);
+        border-color: #fb7185;
+        box-shadow: 0 0 15px #f43f5e, inset 0 0 10px rgba(244, 63, 94, 0.6);
+        transform: translateY(-2px);
       }
       
+      .neon-border-container {
+        border: 1px solid;
+        border-image-slice: 1;
+        border-image-source: linear-gradient(to bottom right, #d946ef, #22d3ee);
+        box-shadow: 0 0 15px rgba(217, 70, 239, 0.3), 0 0 15px rgba(34, 211, 238, 0.3);
+      }
+      
+      .comic-panel-container {
+        border: 2px solid #475569; /* slate-600 */
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      }
+      .comic-panel-container:hover {
+        border-color: #d946ef;
+        box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
+        transform: translateY(-5px);
+      }
+
       /* Speech bubble style for overlaid text */
       .speech-bubble {
         position: relative;
-        background: rgba(30, 41, 59, 0.85); /* slate-800 with opacity */
+        background: rgba(30, 41, 59, 0.9); /* slate-800 with opacity */
         backdrop-filter: blur(4px);
         border-radius: .4em;
         color: #e2e8f0; /* slate-200 */
         padding: 0.5em 0.8em;
-        border: 1px solid rgba(71, 85, 105, 0.7); /* slate-600 with opacity */
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        border: 1px solid rgba(6, 182, 212, 0.5); /* cyan-500 */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       }
 
       .speech-bubble-bottom:after {
@@ -93,7 +141,7 @@
         width: 0;
         height: 0;
         border: 12px solid transparent;
-        border-top-color: rgba(30, 41, 59, 0.85); /* Match bubble background */
+        border-top-color: rgba(30, 41, 59, 0.9); /* Match bubble background */
         border-bottom: 0;
         margin-left: -12px;
         margin-bottom: -12px;
@@ -101,38 +149,25 @@
 
       /* Tailwind form-checkbox custom color */
       .form-checkbox {
-        appearance: none;
-        padding: 0;
-        display: inline-block;
-        vertical-align: middle;
-        background-origin: border-box;
-        user-select: none;
-        flex-shrink: 0;
-        height: 1em;
-        width: 1em;
-        color: #ec4899; /* pink-500 */
+        color: #d946ef; /* fuchsia-500 */
         background-color: #475569; /* slate-600 */
         border-color: #64748b; /* slate-500 */
         border-width: 1px;
-        border-radius: 0.25rem; /* rounded */
+        border-radius: 0.25rem;
       }
       .form-checkbox:checked {
-        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
         border-color: transparent;
-        background-color: currentColor; /* Uses the text-pink-500 color */
-        background-size: 100% 100%;
-        background-position: center;
-        background-repeat: no-repeat;
+        background-color: currentColor;
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
       }
       .form-checkbox:focus {
         outline: 2px solid transparent;
         outline-offset: 2px;
-        --tw-ring-offset-width: 2px;
-        --tw-ring-offset-color: #0f172a; /* slate-900 or your app's main bg */
-        --tw-ring-color: #f9a8d4; /* pink-300 - lighter pink for focus */
-        --tw-ring-opacity: 1;
-        box-shadow: var(--tw-ring-offset-width) 0 0 0 var(--tw-ring-offset-color), var(--tw-ring-offset-width) var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), calc(-1 * var(--tw-ring-offset-width)) 0 0 0 var(--tw-ring-offset-color), calc(-1 * var(--tw-ring-offset-width)) var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), 0 var(--tw-ring-offset-width) 0 0 var(--tw-ring-offset-color), 0 0 0 calc(var(--tw-ring-offset-width) + 2px) var(--tw-ring-color);
+        --tw-ring-offset-color: #0f172a;
+        --tw-ring-color: #e879f9; /* fuchsia-400 */
+        box-shadow: 0 0 0 2px var(--tw-ring-offset-color), 0 0 0 4px var(--tw-ring-color);
       }
+      
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     </style>
   <script type="importmap">
