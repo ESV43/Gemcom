@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import ConfigForm from './components/ConfigForm';
 import ComicPanel from './components/ComicPanel';
@@ -408,7 +407,7 @@ const App: React.FC = () => {
               <button
                 onClick={handleDownloadPdf}
                 disabled={isLoading || panels.some(p => p.isGenerating || !!p.imageError)}
-                className="neon-button px-6 py-2 rounded-lg shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
+                className="neon-button px-6 py-2"
               >
                 Download as PDF
               </button>
@@ -430,7 +429,7 @@ const App: React.FC = () => {
 
       <footer className="text-center mt-12 py-6 border-t border-slate-700">
         <p className="text-sm text-slate-500">
-          AI Comic Creator &copy; {new Date().getFullYear()}. Powered by AI.
+          AI Comic Creator © {new Date().getFullYear()}. Powered by AI.
         </p>
       </footer>
     </div>
