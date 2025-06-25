@@ -36,7 +36,6 @@ const CharacterReferenceInput: React.FC<CharacterReferenceInputProps> = ({ chara
     } else if (character.images.length >= MAX_CHAR_REF_IMAGES) {
         alert(`Maximum of ${MAX_CHAR_REF_IMAGES} reference images per character reached.`);
     }
-    // Reset file input to allow uploading the same file again if removed
     event.target.value = ''; 
   }, [character, onUpdate]);
 
@@ -45,24 +44,24 @@ const CharacterReferenceInput: React.FC<CharacterReferenceInputProps> = ({ chara
   };
 
   return (
-    <div className="p-4 border border-cyan-700/50 rounded-lg shadow-lg bg-slate-800/50 backdrop-blur-sm mb-4 transition-all duration-300 hover:shadow-cyan-500/20">
+    <div className="p-4 border border-slate-700 rounded-lg bg-slate-800/50 mb-4">
       <div className="flex justify-between items-center mb-3">
         <input
           type="text"
           value={name}
           onChange={handleNameChange}
           placeholder="Character Name"
-          className="neon-input text-white placeholder-slate-400 p-2 rounded-md flex-grow mr-2"
+          className="dark-input text-white placeholder-slate-400 p-2 flex-grow mr-2"
         />
         <button
           onClick={() => onRemove(character.id)}
-          className="neon-button-remove px-3 py-1 text-sm flex-shrink-0"
+          className="remove-button text-sm flex-shrink-0"
         >
           Remove
         </button>
       </div>
       <div className="mb-2">
-        <label className="block text-sm font-medium text-cyan-300 mb-1">Reference Images ({character.images.length}/{MAX_CHAR_REF_IMAGES}):</label>
+        <label className="block text-sm font-medium text-slate-300 mb-1">Reference Images ({character.images.length}/{MAX_CHAR_REF_IMAGES}):</label>
         {character.images.length < MAX_CHAR_REF_IMAGES && (
             <input
             type="file"
