@@ -1,0 +1,228 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap');
+
+:root {
+    --background-dark: #1a1a2e;
+    --primary-neon: #00ffff;
+    --secondary-neon: #ff00ff;
+    --light-color: #e0e0e0;
+    --border-color: #00ffff44;
+    --input-bg: #162447;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Rajdhani', sans-serif;
+    background-color: var(--background-dark);
+    color: var(--light-color);
+    padding: 2rem;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.neon-text {
+    font-family: 'Orbitron', sans-serif;
+    text-shadow: 0 0 5px var(--primary-neon), 0 0 10px var(--primary-neon), 0 0 15px var(--primary-neon);
+    color: var(--primary-neon);
+}
+
+header {
+    text-align: center;
+    animation: fadeInDown 1s ease-out;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#comic-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    background-color: #1f1f38;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 0 15px var(--border-color);
+    animation: fadeInUp 1s ease-out;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+label {
+    font-weight: 600;
+    color: var(--primary-neon);
+    font-size: 1.1rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--light-color);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 10px var(--primary-neon);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#caption-placement-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 1rem;
+}
+
+button {
+    font-family: 'Orbitron', sans-serif;
+    background: transparent;
+    color: var(--primary-neon);
+    border: 2px solid var(--primary-neon);
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+button:hover {
+    background: var(--primary-neon);
+    color: var(--background-dark);
+    box-shadow: 0 0 15px var(--primary-neon);
+}
+
+.cta-button {
+    background-color: var(--primary-neon);
+    color: var(--background-dark);
+    font-weight: 700;
+    border: none;
+}
+.cta-button:hover {
+    background-color: var(--secondary-neon);
+    color: #fff;
+    box-shadow: 0 0 20px var(--secondary-neon);
+}
+
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#loading-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--border-color);
+    border-top: 5px solid var(--primary-neon);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#comic-output {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.comic-page {
+    border: 1px solid var(--border-color);
+    background-color: #1f1f38;
+    border-radius: 5px;
+    overflow: hidden;
+    animation: zoomIn 0.5s ease-out;
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.comic-page img {
+    width: 100%;
+    display: block;
+}
+
+.comic-page .caption {
+    padding: 1rem;
+    text-align: center;
+}
+
+#character-references {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.character-reference-entry {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
